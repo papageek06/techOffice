@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ReleveCompteur index{% endblock %}
+
+{% block body %}
+    <h1>ReleveCompteur index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>DateReleve</th>
+                <th>CompteurNoir</th>
+                <th>CompteurCouleur</th>
+                <th>Source</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for releve_compteur in releve_compteurs %}
+            <tr>
+                <td>{{ releve_compteur.id }}</td>
+                <td>{{ releve_compteur.dateReleve ? releve_compteur.dateReleve|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ releve_compteur.compteurNoir }}</td>
+                <td>{{ releve_compteur.compteurCouleur }}</td>
+                <td>{{ releve_compteur.source }}</td>
+                <td>
+                    <a href="{{ path('app_releve_compteur_show', {'id': releve_compteur.id}) }}">show</a>
+                    <a href="{{ path('app_releve_compteur_edit', {'id': releve_compteur.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_releve_compteur_new') }}">Create new</a>
+{% endblock %}

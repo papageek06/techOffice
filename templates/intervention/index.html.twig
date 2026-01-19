@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Intervention index{% endblock %}
+
+{% block body %}
+    <h1>Intervention index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>DateCreation</th>
+                <th>DateIntervention</th>
+                <th>TypeIntervention</th>
+                <th>Statut</th>
+                <th>Description</th>
+                <th>TempsFacturableMinutes</th>
+                <th>TempsReelMinutes</th>
+                <th>Facturable</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for intervention in interventions %}
+            <tr>
+                <td>{{ intervention.id }}</td>
+                <td>{{ intervention.dateCreation ? intervention.dateCreation|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ intervention.dateIntervention ? intervention.dateIntervention|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ intervention.typeIntervention }}</td>
+                <td>{{ intervention.statut }}</td>
+                <td>{{ intervention.description }}</td>
+                <td>{{ intervention.tempsFacturableMinutes }}</td>
+                <td>{{ intervention.tempsReelMinutes }}</td>
+                <td>{{ intervention.facturable ? 'Yes' : 'No' }}</td>
+                <td>
+                    <a href="{{ path('app_intervention_show', {'id': intervention.id}) }}">show</a>
+                    <a href="{{ path('app_intervention_edit', {'id': intervention.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="10">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_intervention_new') }}">Create new</a>
+{% endblock %}

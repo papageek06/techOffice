@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Imprimante index{% endblock %}
+
+{% block body %}
+    <h1>Imprimante index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>NumeroSerie</th>
+                <th>DateInstallation</th>
+                <th>AdresseIp</th>
+                <th>Emplacement</th>
+                <th>SuivieParService</th>
+                <th>Statut</th>
+                <th>Notes</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for imprimante in imprimantes %}
+            <tr>
+                <td>{{ imprimante.id }}</td>
+                <td>{{ imprimante.numeroSerie }}</td>
+                <td>{{ imprimante.dateInstallation ? imprimante.dateInstallation|date('Y-m-d') : '' }}</td>
+                <td>{{ imprimante.adresseIp }}</td>
+                <td>{{ imprimante.emplacement }}</td>
+                <td>{{ imprimante.suivieParService ? 'Yes' : 'No' }}</td>
+                <td>{{ imprimante.statut }}</td>
+                <td>{{ imprimante.notes }}</td>
+                <td>
+                    <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}">show</a>
+                    <a href="{{ path('app_imprimante_edit', {'id': imprimante.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_imprimante_new') }}">Create new</a>
+{% endblock %}

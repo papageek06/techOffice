@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}EtatConsommable{% endblock %}
+
+{% block body %}
+    <h1>EtatConsommable</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ etat_consommable.id }}</td>
+            </tr>
+            <tr>
+                <th>DateCapture</th>
+                <td>{{ etat_consommable.dateCapture ? etat_consommable.dateCapture|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>NoirPourcent</th>
+                <td>{{ etat_consommable.noirPourcent }}</td>
+            </tr>
+            <tr>
+                <th>CyanPourcent</th>
+                <td>{{ etat_consommable.cyanPourcent }}</td>
+            </tr>
+            <tr>
+                <th>MagentaPourcent</th>
+                <td>{{ etat_consommable.magentaPourcent }}</td>
+            </tr>
+            <tr>
+                <th>JaunePourcent</th>
+                <td>{{ etat_consommable.jaunePourcent }}</td>
+            </tr>
+            <tr>
+                <th>BacRecuperation</th>
+                <td>{{ etat_consommable.bacRecuperation }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_etat_consommable_index') }}">back to list</a>
+
+    <a href="{{ path('app_etat_consommable_edit', {'id': etat_consommable.id}) }}">edit</a>
+
+    {{ include('etat_consommable/_delete_form.html.twig') }}
+{% endblock %}

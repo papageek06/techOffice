@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Site{% endblock %}
+
+{% block body %}
+    <h1>Site</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ site.id }}</td>
+            </tr>
+            <tr>
+                <th>NomSite</th>
+                <td>{{ site.nomSite }}</td>
+            </tr>
+            <tr>
+                <th>Principal</th>
+                <td>{{ site.principal ? 'Yes' : 'No' }}</td>
+            </tr>
+            <tr>
+                <th>Actif</th>
+                <td>{{ site.actif ? 'Yes' : 'No' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_site_index') }}">back to list</a>
+
+    <a href="{{ path('app_site_edit', {'id': site.id}) }}">edit</a>
+
+    {{ include('site/_delete_form.html.twig') }}
+{% endblock %}

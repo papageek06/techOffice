@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}EtatConsommable index{% endblock %}
+
+{% block body %}
+    <h1>EtatConsommable index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>DateCapture</th>
+                <th>NoirPourcent</th>
+                <th>CyanPourcent</th>
+                <th>MagentaPourcent</th>
+                <th>JaunePourcent</th>
+                <th>BacRecuperation</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for etat_consommable in etat_consommables %}
+            <tr>
+                <td>{{ etat_consommable.id }}</td>
+                <td>{{ etat_consommable.dateCapture ? etat_consommable.dateCapture|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ etat_consommable.noirPourcent }}</td>
+                <td>{{ etat_consommable.cyanPourcent }}</td>
+                <td>{{ etat_consommable.magentaPourcent }}</td>
+                <td>{{ etat_consommable.jaunePourcent }}</td>
+                <td>{{ etat_consommable.bacRecuperation }}</td>
+                <td>
+                    <a href="{{ path('app_etat_consommable_show', {'id': etat_consommable.id}) }}">show</a>
+                    <a href="{{ path('app_etat_consommable_edit', {'id': etat_consommable.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_etat_consommable_new') }}">Create new</a>
+{% endblock %}

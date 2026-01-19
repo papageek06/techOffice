@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil - TechOffice{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+                <h1 class="display-4">Bienvenue sur TechOffice</h1>
+                <p class="lead">Système de gestion des imprimantes et interventions</p>
+                <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+                <p>Gérez vos clients, sites, imprimantes, interventions et bien plus encore.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-building"></i> Clients & Sites
+                    </h5>
+                    <p class="card-text">Gérez vos clients et leurs sites d'installation.</p>
+                    <a href="{{ path('app_client_index') }}" class="btn btn-primary">Voir les clients</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-printer"></i> Imprimantes
+                    </h5>
+                    <p class="card-text">Suivez vos imprimantes et leurs états.</p>
+                    <a href="{{ path('app_imprimante_index') }}" class="btn btn-primary">Voir les imprimantes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-tools"></i> Interventions
+                    </h5>
+                    <p class="card-text">Gérez les interventions et maintenances.</p>
+                    <a href="{{ path('app_intervention_index') }}" class="btn btn-primary">Voir les interventions</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people"></i> Utilisateurs
+                    </h5>
+                    <p class="card-text">Gérez les utilisateurs du système.</p>
+                    <a href="{{ path('app_user_index') }}" class="btn btn-primary">Voir les utilisateurs</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-calendar-check"></i> Demandes Congé
+                    </h5>
+                    <p class="card-text">Gérez les demandes de congé.</p>
+                    <a href="{{ path('app_demande_conge_index') }}" class="btn btn-primary">Voir les demandes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up"></i> Relevés Compteur
+                    </h5>
+                    <p class="card-text">Suivez les relevés de compteurs.</p>
+                    <a href="{{ path('app_releve_compteur_index') }}" class="btn btn-primary">Voir les relevés</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

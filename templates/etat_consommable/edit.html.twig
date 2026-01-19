@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit EtatConsommable{% endblock %}
+
+{% block body %}
+    <h1>Edit EtatConsommable</h1>
+
+    {{ include('etat_consommable/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('app_etat_consommable_index') }}">back to list</a>
+
+    {{ include('etat_consommable/_delete_form.html.twig') }}
+{% endblock %}

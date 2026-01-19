@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Imprimante{% endblock %}
+
+{% block body %}
+    <h1>Imprimante</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ imprimante.id }}</td>
+            </tr>
+            <tr>
+                <th>NumeroSerie</th>
+                <td>{{ imprimante.numeroSerie }}</td>
+            </tr>
+            <tr>
+                <th>DateInstallation</th>
+                <td>{{ imprimante.dateInstallation ? imprimante.dateInstallation|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>AdresseIp</th>
+                <td>{{ imprimante.adresseIp }}</td>
+            </tr>
+            <tr>
+                <th>Emplacement</th>
+                <td>{{ imprimante.emplacement }}</td>
+            </tr>
+            <tr>
+                <th>SuivieParService</th>
+                <td>{{ imprimante.suivieParService ? 'Yes' : 'No' }}</td>
+            </tr>
+            <tr>
+                <th>Statut</th>
+                <td>{{ imprimante.statut }}</td>
+            </tr>
+            <tr>
+                <th>Notes</th>
+                <td>{{ imprimante.notes }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_imprimante_index') }}">back to list</a>
+
+    <a href="{{ path('app_imprimante_edit', {'id': imprimante.id}) }}">edit</a>
+
+    {{ include('imprimante/_delete_form.html.twig') }}
+{% endblock %}
