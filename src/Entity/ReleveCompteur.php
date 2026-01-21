@@ -30,6 +30,9 @@ class ReleveCompteur
     #[ORM\Column(length: 30, options: ['default' => 'manuel'])]
     private string $source = 'manuel';
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $dateReceptionRapport = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -98,6 +101,17 @@ class ReleveCompteur
     public function setCompteurFax(?int $compteurFax): self
     {
         $this->compteurFax = $compteurFax;
+        return $this;
+    }
+
+    public function getDateReceptionRapport(): ?\DateTimeImmutable
+    {
+        return $this->dateReceptionRapport;
+    }
+
+    public function setDateReceptionRapport(?\DateTimeImmutable $dateReceptionRapport): self
+    {
+        $this->dateReceptionRapport = $dateReceptionRapport;
         return $this;
     }
 }

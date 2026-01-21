@@ -23,7 +23,10 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <div>
                         <h5 class="mb-0">
-                            <i class="bi bi-building"></i> {{ site.nomSite }}
+                            <i class="bi bi-building"></i> 
+                            <a href="{{ path('app_site_show', {'id': site.id}) }}" class="text-white text-decoration-none">
+                                {{ site.nomSite }}
+                            </a>
                             {% if site.principal %}
                                 <span class="badge bg-warning text-dark ms-2">Principal</span>
                             {% endif %}
@@ -54,12 +57,11 @@
                                     <tr>
                                         <th>Modèle</th>
                                         <th>Fabricant</th>
-                                        <th>N° Série</th>
-                                        <th>IP</th>
+                                        <th class="d-none d-md-table-cell">N° Série</th>
+                                        <th class="d-none d-md-table-cell">IP</th>
                                         <th>Statut</th>
                                         <th>Niveaux d'encre</th>
                                         <th>Dernier relevé</th>
-                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -68,7 +70,9 @@
                                         {% set dernierReleve = imprimante.getDernierReleve() %}
                                         <tr>
                                             <td>
-                                                <strong>{{ imprimante.modele.referenceModele }}</strong>
+                                                <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="text-decoration-none">
+                                                    <strong>{{ imprimante.modele.referenceModele }}</strong>
+                                                </a>
                                                 {% if imprimante.modele.couleur %}
                                                     <span class="badge bg-info">Couleur</span>
                                                 {% else %}
@@ -76,8 +80,8 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ imprimante.modele.fabricant.nomFabricant }}</td>
-                                            <td><code>{{ imprimante.numeroSerie }}</code></td>
-                                            <td>
+                                            <td class="d-none d-md-table-cell"><code>{{ imprimante.numeroSerie }}</code></td>
+                                            <td class="d-none d-md-table-cell">
                                                 {% if imprimante.adresseIp %}
                                                     <code>{{ imprimante.adresseIp }}</code>
                                                 {% else %}
@@ -91,20 +95,79 @@
                                             </td>
                                             <td>
                                                 {% if dernierEtat %}
-                                                    <div class="d-flex gap-2 align-items-center">
-                                                        <span class="badge bg-{{ dernierEtat.noirPourcent is null ? 'secondary' : (dernierEtat.noirPourcent < 20 ? 'danger' : (dernierEtat.noirPourcent < 50 ? 'warning' : 'success')) }}">
-                                                            N: {{ dernierEtat.noirPourcent ?? 'N/A' }}%
-                                                        </span>
+                                                    <div class="d-flex gap-1 align-items-center flex-wrap">
+                                                        {# Noir #}
+                                                        {% if dernierEtat.noirPourcent is not null %}
+                                                            <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
+                                                                <div class="progress" style="height: 18px;">
+                                                                    <div class="progress-bar bg-dark text-white d-flex align-items-center justify-content-center" 
+                                                                         role="progressbar" 
+                                                                         style="width: {{ dernierEtat.noirPourcent }}%; font-size: 0.7rem;" 
+                                                                         aria-valuenow="{{ dernierEtat.noirPourcent }}" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100"
+                                                                         title="Noir: {{ dernierEtat.noirPourcent }}%">
+                                                                        <strong>{{ dernierEtat.noirPourcent }}%</strong>
+                                                                    </div>
+                                                                </div>
+                                                                <small class="text-muted d-block text-center" style="font-size: 0.65rem;">N</small>
+                                                            </div>
+                                                        {% endif %}
+                                                        
                                                         {% if imprimante.modele.couleur %}
-                                                            <span class="badge bg-{{ dernierEtat.cyanPourcent is null ? 'secondary' : (dernierEtat.cyanPourcent < 20 ? 'danger' : (dernierEtat.cyanPourcent < 50 ? 'warning' : 'success')) }}">
-                                                                C: {{ dernierEtat.cyanPourcent ?? 'N/A' }}%
-                                                            </span>
-                                                            <span class="badge bg-{{ dernierEtat.magentaPourcent is null ? 'secondary' : (dernierEtat.magentaPourcent < 20 ? 'danger' : (dernierEtat.magentaPourcent < 50 ? 'warning' : 'success')) }}">
-                                                                M: {{ dernierEtat.magentaPourcent ?? 'N/A' }}%
-                                                            </span>
-                                                            <span class="badge bg-{{ dernierEtat.jaunePourcent is null ? 'secondary' : (dernierEtat.jaunePourcent < 20 ? 'danger' : (dernierEtat.jaunePourcent < 50 ? 'warning' : 'success')) }}">
-                                                                J: {{ dernierEtat.jaunePourcent ?? 'N/A' }}%
-                                                            </span>
+                                                            {# Cyan #}
+                                                            {% if dernierEtat.cyanPourcent is not null %}
+                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
+                                                                    <div class="progress" style="height: 18px;">
+                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
+                                                                             role="progressbar" 
+                                                                             style="width: {{ dernierEtat.cyanPourcent }}%; background-color: #00bcd4; font-size: 0.7rem;" 
+                                                                             aria-valuenow="{{ dernierEtat.cyanPourcent }}" 
+                                                                             aria-valuemin="0" 
+                                                                             aria-valuemax="100"
+                                                                             title="Cyan: {{ dernierEtat.cyanPourcent }}%">
+                                                                            <strong>{{ dernierEtat.cyanPourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">C</small>
+                                                                </div>
+                                                            {% endif %}
+                                                            
+                                                            {# Magenta #}
+                                                            {% if dernierEtat.magentaPourcent is not null %}
+                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
+                                                                    <div class="progress" style="height: 18px;">
+                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
+                                                                             role="progressbar" 
+                                                                             style="width: {{ dernierEtat.magentaPourcent }}%; background-color: #e91e63; font-size: 0.7rem;" 
+                                                                             aria-valuenow="{{ dernierEtat.magentaPourcent }}" 
+                                                                             aria-valuemin="0" 
+                                                                             aria-valuemax="100"
+                                                                             title="Magenta: {{ dernierEtat.magentaPourcent }}%">
+                                                                            <strong>{{ dernierEtat.magentaPourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">M</small>
+                                                                </div>
+                                                            {% endif %}
+                                                            
+                                                            {# Jaune #}
+                                                            {% if dernierEtat.jaunePourcent is not null %}
+                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
+                                                                    <div class="progress" style="height: 18px;">
+                                                                        <div class="progress-bar text-dark d-flex align-items-center justify-content-center" 
+                                                                             role="progressbar" 
+                                                                             style="width: {{ dernierEtat.jaunePourcent }}%; background-color: #ffeb3b; font-size: 0.7rem;" 
+                                                                             aria-valuenow="{{ dernierEtat.jaunePourcent }}" 
+                                                                             aria-valuemin="0" 
+                                                                             aria-valuemax="100"
+                                                                             title="Jaune: {{ dernierEtat.jaunePourcent }}%">
+                                                                            <strong>{{ dernierEtat.jaunePourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">J</small>
+                                                                </div>
+                                                            {% endif %}
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
@@ -124,14 +187,6 @@
                                                 {% else %}
                                                     <span class="text-muted">Aucun relevé</span>
                                                 {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="btn btn-sm btn-outline-primary" title="Voir">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="{{ path('app_imprimante_edit', {'id': imprimante.id}) }}" class="btn btn-sm btn-outline-secondary" title="Modifier">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
                                             </td>
                                         </tr>
                                     {% endfor %}

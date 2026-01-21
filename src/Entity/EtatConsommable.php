@@ -45,6 +45,9 @@ class EtatConsommable
     #[ORM\Column(type: 'date_immutable', nullable: true)]
     private ?\DateTimeImmutable $dateEpuisementJaune = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $dateReceptionRapport = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -168,6 +171,17 @@ class EtatConsommable
     public function setDateEpuisementJaune(?\DateTimeImmutable $dateEpuisementJaune): self
     {
         $this->dateEpuisementJaune = $dateEpuisementJaune;
+        return $this;
+    }
+
+    public function getDateReceptionRapport(): ?\DateTimeImmutable
+    {
+        return $this->dateReceptionRapport;
+    }
+
+    public function setDateReceptionRapport(?\DateTimeImmutable $dateReceptionRapport): self
+    {
+        $this->dateReceptionRapport = $dateReceptionRapport;
         return $this;
     }
 }

@@ -33,7 +33,15 @@
 {%- block form_widget_simple -%}
     {% set type = type|default('text') %}
     {% set attr = attr|merge({'class': (attr.class|default('') ~ ' form-control')|trim}) %}
-    <input type="{{ type }}" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+    {% set input_value = '' %}
+    {% if value is not empty %}
+        {% if value is iterable %}
+            {# Ignorer les valeurs de type tableau #}
+        {% else %}
+            {% set input_value = value %}
+        {% endif %}
+    {% endif %}
+    <input type="{{ type }}" {{ block('widget_attributes') }}{% if input_value is not empty %} value="{{ input_value }}"{% endif %}/>
 {%- endblock form_widget_simple -%}
 
 {%- block textarea_widget -%}
@@ -42,13 +50,17 @@
 {%- endblock textarea_widget -%}
 
 {%- block choice_widget_collapsed -%}
-    {% set attr = attr|merge({'class': (attr.class|default('') ~ ' form-select')|trim}) %}
+    {% if multiple %}
+        {% set attr = attr|merge({'class': (attr.class|default('') ~ ' form-select')|trim, 'size': attr.size|default(choices|length)}) %}
+    {% else %}
+        {% set attr = attr|merge({'class': (attr.class|default('') ~ ' form-select')|trim}) %}
+    {% endif %}
     {% if required and placeholder is none and not placeholder_in_choices and not multiple and (attr.size is not defined or attr.size <= 1) -%}
         {% set required = false %}
     {%- endif -%}
     <select {{ block('widget_attributes') }}{% if multiple %} multiple="multiple"{% endif %}>
         {% if placeholder is not none -%}
-            <option value=""{% if required and value is empty %} selected="selected"{% endif %}>{{ placeholder != '' ? (translation_domain is same as(false) ? placeholder : placeholder|trans(placeholder_translation_parameters, translation_domain)) }}</option>
+            <option value=""{% if required and (value is empty or (value is iterable and value|length == 0)) %} selected="selected"{% endif %}>{{ placeholder != '' ? (translation_domain is same as(false) ? placeholder : placeholder|trans(placeholder_translation_parameters, translation_domain)) }}</option>
         {%- endif -%}
         {%- if preferred_choices|length > 0 -%}
             {% set options = preferred_choices %}
