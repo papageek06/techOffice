@@ -14,10 +14,12 @@ use Symfony\Component\Routing\Attribute\Route;
 final class SiteController extends AbstractController
 {
     #[Route(name: 'app_site_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $search = $request->query->get('search', '');
+        
         // Charger les sites avec leurs imprimantes, modèles, fabricants, relevés et états consommables
-        $sites = $entityManager
+        $qb = $entityManager
             ->getRepository(Site::class)
             ->createQueryBuilder('s')
             ->leftJoin('s.imprimantes', 'i')
@@ -29,14 +31,37 @@ final class SiteController extends AbstractController
             ->addSelect('m')
             ->addSelect('f')
             ->addSelect('r')
-            ->addSelect('e')
+            ->addSelect('e');
+
+        // Filtrer par nom de site ou numéro de série d'imprimante
+        if (!empty($search)) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->like('LOWER(s.nomSite)', 'LOWER(:search)'),
+                    $qb->expr()->like('LOWER(i.numeroSerie)', 'LOWER(:search)')
+                )
+            )
+            ->setParameter('search', '%' . $search . '%');
+        }
+
+        $sites = $qb
             ->orderBy('s.nomSite', 'ASC')
             ->addOrderBy('i.numeroSerie', 'ASC')
             ->getQuery()
             ->getResult();
+        
+        // Supprimer les doublons de sites (peuvent apparaître si plusieurs imprimantes correspondent)
+        $uniqueSites = [];
+        foreach ($sites as $site) {
+            if (!isset($uniqueSites[$site->getId()])) {
+                $uniqueSites[$site->getId()] = $site;
+            }
+        }
+        $sites = array_values($uniqueSites);
 
         return $this->render('site/index.html.twig', [
             'sites' => $sites,
+            'search' => $search,
         ]);
     }
 

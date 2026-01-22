@@ -320,27 +320,21 @@ class ImportCsvService
 
         $em = $this->getEntityManager();
         
-        // Chercher un relevé existant pour cette date de relevé
+        // Vérifier si un relevé existe déjà pour cette combinaison dateReleve + dateReceptionRapport
+        // Cela permet de garder l'historique complet de chaque rapport CSV reçu
         $existing = $em->getRepository(ReleveCompteur::class)
             ->findOneBy([
                 'imprimante' => $imprimante,
-                'dateReleve' => $dateReleve
+                'dateReleve' => $dateReleve,
+                'dateReceptionRapport' => $dateReceptionRapport
             ]);
 
-        // Si un relevé existe déjà, mettre à jour seulement si la date de réception est plus récente
+        // Si un relevé existe déjà pour cette combinaison exacte, ne pas créer de doublon
         if ($existing) {
-            // Mettre à jour si la date de réception du nouveau rapport est plus récente
-            if ($existing->getDateReceptionRapport() === null || 
-                ($dateReceptionRapport > $existing->getDateReceptionRapport())) {
-                $existing->setCompteurNoir($this->parseInt($data['MONO_LIFE_COUNT'] ?? null));
-                $existing->setCompteurCouleur($this->parseInt($data['COLOR_LIFE_COUNT'] ?? null));
-                $existing->setCompteurFax($this->parseInt($data['FAX_COUNT'] ?? null));
-                $existing->setDateReceptionRapport($dateReceptionRapport);
-                $existing->setSource('csv');
-            }
             return;
         }
 
+        // Créer un nouveau relevé pour conserver l'historique complet
         $releve = new ReleveCompteur();
         $releve->setImprimante($imprimante);
         $releve->setDateReleve($dateReleve);
@@ -373,73 +367,21 @@ class ImportCsvService
 
         $em = $this->getEntityManager();
         
-        // Chercher un état existant pour cette date de capture
+        // Vérifier si un état existe déjà pour cette combinaison dateCapture + dateReceptionRapport
+        // Cela permet de garder l'historique complet de chaque rapport CSV reçu
         $existing = $em->getRepository(EtatConsommable::class)
             ->findOneBy([
                 'imprimante' => $imprimante,
-                'dateCapture' => $dateCapture
+                'dateCapture' => $dateCapture,
+                'dateReceptionRapport' => $dateReceptionRapport
             ]);
 
-        // Si un état existe déjà, mettre à jour seulement si la date de réception est plus récente
+        // Si un état existe déjà pour cette combinaison exacte, ne pas créer de doublon
         if ($existing) {
-            // Mettre à jour si la date de réception du nouveau rapport est plus récente
-            if ($existing->getDateReceptionRapport() === null || 
-                ($dateReceptionRapport > $existing->getDateReceptionRapport())) {
-                // Mettre à jour tous les niveaux (même si certains sont null, pour gérer les couleurs manquantes)
-                $etat = $existing;
-                $etat->setDateReceptionRapport($dateReceptionRapport);
-                
-                // Toners : BLACK_LEVEL, CYAN_LEVEL, MAGENTA_LEVEL, YELLOW_LEVEL, WASTE_LEVEL
-                // Mettre à jour seulement si la valeur n'est pas null (pour préserver les valeurs existantes si le CSV n'a pas de données)
-                $noir = $this->parsePourcent($data['BLACK_LEVEL'] ?? null);
-                if ($noir !== null) {
-                    $etat->setNoirPourcent($noir);
-                }
-                
-                $cyan = $this->parsePourcent($data['CYAN_LEVEL'] ?? null);
-                if ($cyan !== null) {
-                    $etat->setCyanPourcent($cyan);
-                }
-                
-                $magenta = $this->parsePourcent($data['MAGENTA_LEVEL'] ?? null);
-                if ($magenta !== null) {
-                    $etat->setMagentaPourcent($magenta);
-                }
-                
-                $jaune = $this->parsePourcent($data['YELLOW_LEVEL'] ?? null);
-                if ($jaune !== null) {
-                    $etat->setJaunePourcent($jaune);
-                }
-                
-                $bac = $this->parsePourcent($data['WASTE_LEVEL'] ?? null);
-                if ($bac !== null) {
-                    $etat->setBacRecuperation($bac);
-                }
-                
-                // Dates prévisionnelles d'épuisement
-                $dateEpuisementNoir = $this->parseDate($data['BLACK_DEPLETION_DATE'] ?? null);
-                if ($dateEpuisementNoir !== null) {
-                    $etat->setDateEpuisementNoir($dateEpuisementNoir);
-                }
-                
-                $dateEpuisementCyan = $this->parseDate($data['CYAN_DEPLETION_DATE'] ?? null);
-                if ($dateEpuisementCyan !== null) {
-                    $etat->setDateEpuisementCyan($dateEpuisementCyan);
-                }
-                
-                $dateEpuisementMagenta = $this->parseDate($data['MAGENTA_DEPLETION_DATE'] ?? null);
-                if ($dateEpuisementMagenta !== null) {
-                    $etat->setDateEpuisementMagenta($dateEpuisementMagenta);
-                }
-                
-                $dateEpuisementJaune = $this->parseDate($data['YELLOW_DEPLETION_DATE'] ?? null);
-                if ($dateEpuisementJaune !== null) {
-                    $etat->setDateEpuisementJaune($dateEpuisementJaune);
-                }
-            }
             return;
         }
 
+        // Créer un nouvel état pour conserver l'historique complet
         $etat = new EtatConsommable();
         $etat->setImprimante($imprimante);
         $etat->setDateCapture($dateCapture);

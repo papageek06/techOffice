@@ -46,10 +46,34 @@ final class ImprimanteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_imprimante_show', methods: ['GET'])]
-    public function show(Imprimante $imprimante): Response
+    public function show(Imprimante $imprimante, EntityManagerInterface $entityManager): Response
     {
+        // Récupérer tous les relevés triés par date de réception (plus récent en premier)
+        $releves = $entityManager
+            ->getRepository(\App\Entity\ReleveCompteur::class)
+            ->createQueryBuilder('r')
+            ->where('r.imprimante = :imprimante')
+            ->setParameter('imprimante', $imprimante)
+            ->orderBy('r.dateReceptionRapport', 'DESC')
+            ->addOrderBy('r.dateReleve', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        // Récupérer tous les états consommables triés par date de réception (plus récent en premier)
+        $etats = $entityManager
+            ->getRepository(\App\Entity\EtatConsommable::class)
+            ->createQueryBuilder('e')
+            ->where('e.imprimante = :imprimante')
+            ->setParameter('imprimante', $imprimante)
+            ->orderBy('e.dateReceptionRapport', 'DESC')
+            ->addOrderBy('e.dateCapture', 'DESC')
+            ->getQuery()
+            ->getResult();
+
         return $this->render('imprimante/show.html.twig', [
             'imprimante' => $imprimante,
+            'releves' => $releves,
+            'etats' => $etats,
         ]);
     }
 

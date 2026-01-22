@@ -44,6 +44,9 @@ class Imprimante
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $dualScan = false;
+
     /** @var Collection<int, Intervention> */
     #[ORM\OneToMany(mappedBy: 'imprimante', targetEntity: Intervention::class, orphanRemoval: true)]
     private Collection $interventions;
@@ -164,6 +167,17 @@ class Imprimante
     public function setNotes(?string $notes): self
     {
         $this->notes = $notes;
+        return $this;
+    }
+
+    public function isDualScan(): bool
+    {
+        return $this->dualScan;
+    }
+
+    public function setDualScan(bool $dualScan): self
+    {
+        $this->dualScan = $dualScan;
         return $this;
     }
 

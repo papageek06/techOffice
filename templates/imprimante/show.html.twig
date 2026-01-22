@@ -1,50 +1,228 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Imprimante{% endblock %}
+{% block title %}Détails de l'imprimante - {{ imprimante.modele.referenceModele }}{% endblock %}
 
 {% block body %}
-    <h1>Imprimante</h1>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-printer"></i> {{ imprimante.modele.referenceModele }}{% if imprimante.dualScan %} A{% endif %}
+        </h1>
+        <div>
+            <a href="{{ path('app_imprimante_index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+            <a href="{{ path('app_imprimante_edit', {'id': imprimante.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ imprimante.id }}</td>
-            </tr>
-            <tr>
-                <th>NumeroSerie</th>
-                <td>{{ imprimante.numeroSerie }}</td>
-            </tr>
-            <tr>
-                <th>DateInstallation</th>
-                <td>{{ imprimante.dateInstallation ? imprimante.dateInstallation|date('Y-m-d') : '' }}</td>
-            </tr>
-            <tr>
-                <th>AdresseIp</th>
-                <td>{{ imprimante.adresseIp }}</td>
-            </tr>
-            <tr>
-                <th>Emplacement</th>
-                <td>{{ imprimante.emplacement }}</td>
-            </tr>
-            <tr>
-                <th>SuivieParService</th>
-                <td>{{ imprimante.suivieParService ? 'Yes' : 'No' }}</td>
-            </tr>
-            <tr>
-                <th>Statut</th>
-                <td>{{ imprimante.statut }}</td>
-            </tr>
-            <tr>
-                <th>Notes</th>
-                <td>{{ imprimante.notes }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {# Informations générales #}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations générales</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 40%;">Numéro de série</th>
+                            <td><code>{{ imprimante.numeroSerie }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Modèle</th>
+                            <td>{{ imprimante.modele.referenceModele }}{% if imprimante.dualScan %} <span class="badge bg-info">A</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Fabricant</th>
+                            <td>{{ imprimante.modele.fabricant.nomFabricant }}</td>
+                        </tr>
+                        <tr>
+                            <th>Site</th>
+                            <td>
+                                <a href="{{ path('app_site_show', {'id': imprimante.site.id}) }}">
+                                    {{ imprimante.site.nomSite }}
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 40%;">Adresse IP</th>
+                            <td><code>{{ imprimante.adresseIp ?? '-' }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Emplacement</th>
+                            <td>{{ imprimante.emplacement ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Géré par service</th>
+                            <td>
+                                <span class="badge bg-{{ imprimante.suivieParService ? 'success' : 'secondary' }}">
+                                    {{ imprimante.suivieParService ? 'Oui' : 'Non' }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge bg-{{ imprimante.statut.value == 'actif' ? 'success' : (imprimante.statut.value == 'hs' ? 'danger' : 'warning') }}">
+                                    {{ imprimante.statut.value|upper }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <a href="{{ path('app_imprimante_index') }}">back to list</a>
+    {# Historique des relevés de compteur #}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Historique des relevés de compteur</h5>
+            <span class="badge bg-light text-dark">{{ releves|length }} rapport(s)</span>
+        </div>
+        <div class="card-body">
+            {% if releves is empty %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> Aucun relevé de compteur disponible.
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date du scan</th>
+                                <th>Compteur Noir</th>
+                                <th>Compteur Couleur</th>
+                                <th>Compteur Fax</th>
+                                <th>Évolution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for releve in releves %}
+                                {% set prevReleve = loop.index < releves|length ? releves[loop.index] : null %}
+                                <tr>
+                                    <td><strong>{{ releve.dateReleve|date('d/m/Y H:i') }}</strong></td>
+                                    <td>{{ releve.compteurNoir ?? '-' }}</td>
+                                    <td>{{ releve.compteurCouleur ?? '-' }}</td>
+                                    <td>{{ releve.compteurFax ?? '-' }}</td>
+                                    <td>
+                                        {% if prevReleve %}
+                                            {% set diffNoir = releve.compteurNoir and prevReleve.compteurNoir ? (releve.compteurNoir - prevReleve.compteurNoir) : null %}
+                                            {% set diffCouleur = releve.compteurCouleur and prevReleve.compteurCouleur ? (releve.compteurCouleur - prevReleve.compteurCouleur) : null %}
+                                            <small class="text-muted">
+                                                {% if diffNoir is not null %}
+                                                    N: <span class="badge bg-{{ diffNoir > 0 ? 'success' : 'secondary' }}">{{ diffNoir > 0 ? '+' : '' }}{{ diffNoir }}</span>
+                                                {% endif %}
+                                                {% if diffCouleur is not null %}
+                                                    C: <span class="badge bg-{{ diffCouleur > 0 ? 'info' : 'secondary' }}">{{ diffCouleur > 0 ? '+' : '' }}{{ diffCouleur }}</span>
+                                                {% endif %}
+                                            </small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-    <a href="{{ path('app_imprimante_edit', {'id': imprimante.id}) }}">edit</a>
-
-    {{ include('imprimante/_delete_form.html.twig') }}
+    {# Historique des états consommables (niveaux d'encre) #}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-droplet"></i> Historique des niveaux d'encre</h5>
+            <span class="badge bg-dark">{{ etats|length }} rapport(s)</span>
+        </div>
+        <div class="card-body">
+            {% if etats is empty %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> Aucun état consommable disponible.
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date de capture</th>
+                                <th>Noir</th>
+                                <th>Cyan</th>
+                                <th>Magenta</th>
+                                <th>Jaune</th>
+                                <th>Bac récupération</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for etat in etats %}
+                                <tr>
+                                    <td><strong>{{ etat.dateCapture|date('d/m/Y H:i') }}</strong></td>
+                                    <td>
+                                        {% if etat.noirPourcent is not null %}
+                                            <div class="progress" style="height: 20px; width: 80px;">
+                                                <div class="progress-bar bg-dark" style="width: {{ etat.noirPourcent }}%;">
+                                                    {{ etat.noirPourcent }}%
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if etat.cyanPourcent is not null %}
+                                            <div class="progress" style="height: 20px; width: 80px;">
+                                                <div class="progress-bar" style="width: {{ etat.cyanPourcent }}%; background-color: #00bcd4;">
+                                                    {{ etat.cyanPourcent }}%
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if etat.magentaPourcent is not null %}
+                                            <div class="progress" style="height: 20px; width: 80px;">
+                                                <div class="progress-bar" style="width: {{ etat.magentaPourcent }}%; background-color: #e91e63;">
+                                                    {{ etat.magentaPourcent }}%
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if etat.jaunePourcent is not null %}
+                                            <div class="progress" style="height: 20px; width: 80px;">
+                                                <div class="progress-bar" style="width: {{ etat.jaunePourcent }}%; background-color: #ffeb3b; color: #000;">
+                                                    {{ etat.jaunePourcent }}%
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if etat.bacRecuperation is not null %}
+                                            <span class="badge bg-secondary">{{ etat.bacRecuperation }}%</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

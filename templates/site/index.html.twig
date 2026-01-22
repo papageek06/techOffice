@@ -4,18 +4,52 @@
 
 {% block body %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h1>
             <i class="bi bi-building"></i> Liste des Sites
         </h1>
+        <div class="d-flex gap-2 flex-grow-1 justify-content-end" style="max-width: 600px;">
+            <form method="GET" action="{{ path('app_site_index') }}" class="d-flex flex-grow-1">
+                <div class="input-group">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Rechercher par nom de site ou numéro de série..." 
+                           value="{{ search ?? '' }}"
+                           aria-label="Rechercher">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i> Rechercher
+                    </button>
+                    {% if search %}
+                        <a href="{{ path('app_site_index') }}" class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-x-circle"></i> Effacer
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
         <a href="{{ path('app_site_new') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nouveau Site
         </a>
     </div>
 
+    {% if search %}
+        <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle"></i> Résultats de recherche pour : <strong>"{{ search }}"</strong>
+            <a href="{{ path('app_site_index') }}" class="btn btn-sm btn-outline-primary ms-2">
+                <i class="bi bi-x-circle"></i> Effacer la recherche
+            </a>
+        </div>
+    {% endif %}
+
     {% if sites is empty %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> Aucun site trouvé.
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> 
+            {% if search %}
+                Aucun site ou imprimante trouvé pour : <strong>"{{ search }}"</strong>
+            {% else %}
+                Aucun site trouvé.
+            {% endif %}
         </div>
     {% else %}
         {% for site in sites %}
@@ -55,13 +89,13 @@
                             <table class="table table-hover table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Modèle</th>
-                                        <th>Fabricant</th>
-                                        <th class="d-none d-md-table-cell">N° Série</th>
-                                        <th class="d-none d-md-table-cell">IP</th>
-                                        <th>Statut</th>
-                                        <th>Niveaux d'encre</th>
-                                        <th>Dernier relevé</th>
+                                        <th style="width: 12%;">Modèle</th>
+                                        <th style="width: 10%;">Fabricant</th>
+                                        <th class="d-none d-md-table-cell" style="width: 10%;">N° Série</th>
+                                        <th class="d-none d-md-table-cell" style="width: 10%;">IP</th>
+                                        <th style="width: 8%;">Géré</th>
+                                        <th style="width: 35%;">Niveaux d'encre</th>
+                                        <th style="width: 15%;">Dernier scan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -69,19 +103,14 @@
                                         {% set dernierEtat = imprimante.getDernierEtatConsommable() %}
                                         {% set dernierReleve = imprimante.getDernierReleve() %}
                                         <tr>
-                                            <td>
+                                            <td style="white-space: nowrap;">
                                                 <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="text-decoration-none">
-                                                    <strong>{{ imprimante.modele.referenceModele }}</strong>
+                                                    <strong style="font-size: 0.9rem;">{{ imprimante.modele.referenceModele }}{% if imprimante.dualScan %} A{% endif %}</strong>
                                                 </a>
-                                                {% if imprimante.modele.couleur %}
-                                                    <span class="badge bg-info">Couleur</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary">N&B</span>
-                                                {% endif %}
                                             </td>
-                                            <td>{{ imprimante.modele.fabricant.nomFabricant }}</td>
-                                            <td class="d-none d-md-table-cell"><code>{{ imprimante.numeroSerie }}</code></td>
-                                            <td class="d-none d-md-table-cell">
+                                            <td style="font-size: 0.85rem;">{{ imprimante.modele.fabricant.nomFabricant }}</td>
+                                            <td class="d-none d-md-table-cell" style="font-size: 0.8rem;"><code>{{ imprimante.numeroSerie }}</code></td>
+                                            <td class="d-none d-md-table-cell" style="font-size: 0.8rem;">
                                                 {% if imprimante.adresseIp %}
                                                     <code>{{ imprimante.adresseIp }}</code>
                                                 {% else %}
@@ -89,20 +118,20 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge bg-{{ imprimante.statut.value == 'actif' ? 'success' : (imprimante.statut.value == 'hs' ? 'danger' : 'warning') }}">
-                                                    {{ imprimante.statut.value|upper }}
+                                                <span class="badge bg-{{ imprimante.suivieParService ? 'success' : 'secondary' }}" style="font-size: 0.75rem;">
+                                                    {{ imprimante.suivieParService ? 'Oui' : 'Non' }}
                                                 </span>
                                             </td>
                                             <td>
                                                 {% if dernierEtat %}
-                                                    <div class="d-flex gap-1 align-items-center flex-wrap">
+                                                    <div class="d-flex gap-1 align-items-center flex-wrap" style="max-width: 100%;">
                                                         {# Noir #}
                                                         {% if dernierEtat.noirPourcent is not null %}
-                                                            <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
-                                                                <div class="progress" style="height: 18px;">
+                                                            <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
+                                                                <div class="progress" style="height: 16px;">
                                                                     <div class="progress-bar bg-dark text-white d-flex align-items-center justify-content-center" 
                                                                          role="progressbar" 
-                                                                         style="width: {{ dernierEtat.noirPourcent }}%; font-size: 0.7rem;" 
+                                                                         style="width: {{ dernierEtat.noirPourcent }}%; font-size: 0.65rem;" 
                                                                          aria-valuenow="{{ dernierEtat.noirPourcent }}" 
                                                                          aria-valuemin="0" 
                                                                          aria-valuemax="100"
@@ -110,18 +139,18 @@
                                                                         <strong>{{ dernierEtat.noirPourcent }}%</strong>
                                                                     </div>
                                                                 </div>
-                                                                <small class="text-muted d-block text-center" style="font-size: 0.65rem;">N</small>
+                                                                <small class="text-muted d-block text-center" style="font-size: 0.6rem;">N</small>
                                                             </div>
                                                         {% endif %}
                                                         
                                                         {% if imprimante.modele.couleur %}
                                                             {# Cyan #}
                                                             {% if dernierEtat.cyanPourcent is not null %}
-                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
-                                                                    <div class="progress" style="height: 18px;">
+                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 16px;">
                                                                         <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
                                                                              role="progressbar" 
-                                                                             style="width: {{ dernierEtat.cyanPourcent }}%; background-color: #00bcd4; font-size: 0.7rem;" 
+                                                                             style="width: {{ dernierEtat.cyanPourcent }}%; background-color: #00bcd4; font-size: 0.65rem;" 
                                                                              aria-valuenow="{{ dernierEtat.cyanPourcent }}" 
                                                                              aria-valuemin="0" 
                                                                              aria-valuemax="100"
@@ -129,17 +158,17 @@
                                                                             <strong>{{ dernierEtat.cyanPourcent }}%</strong>
                                                                         </div>
                                                                     </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">C</small>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">C</small>
                                                                 </div>
                                                             {% endif %}
                                                             
                                                             {# Magenta #}
                                                             {% if dernierEtat.magentaPourcent is not null %}
-                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
-                                                                    <div class="progress" style="height: 18px;">
+                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 16px;">
                                                                         <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
                                                                              role="progressbar" 
-                                                                             style="width: {{ dernierEtat.magentaPourcent }}%; background-color: #e91e63; font-size: 0.7rem;" 
+                                                                             style="width: {{ dernierEtat.magentaPourcent }}%; background-color: #e91e63; font-size: 0.65rem;" 
                                                                              aria-valuenow="{{ dernierEtat.magentaPourcent }}" 
                                                                              aria-valuemin="0" 
                                                                              aria-valuemax="100"
@@ -147,17 +176,17 @@
                                                                             <strong>{{ dernierEtat.magentaPourcent }}%</strong>
                                                                         </div>
                                                                     </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">M</small>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">M</small>
                                                                 </div>
                                                             {% endif %}
                                                             
                                                             {# Jaune #}
                                                             {% if dernierEtat.jaunePourcent is not null %}
-                                                                <div class="flex-grow-1" style="min-width: 60px; max-width: 120px;">
-                                                                    <div class="progress" style="height: 18px;">
+                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 16px;">
                                                                         <div class="progress-bar text-dark d-flex align-items-center justify-content-center" 
                                                                              role="progressbar" 
-                                                                             style="width: {{ dernierEtat.jaunePourcent }}%; background-color: #ffeb3b; font-size: 0.7rem;" 
+                                                                             style="width: {{ dernierEtat.jaunePourcent }}%; background-color: #ffeb3b; font-size: 0.65rem;" 
                                                                              aria-valuenow="{{ dernierEtat.jaunePourcent }}" 
                                                                              aria-valuemin="0" 
                                                                              aria-valuemax="100"
@@ -165,27 +194,27 @@
                                                                             <strong>{{ dernierEtat.jaunePourcent }}%</strong>
                                                                         </div>
                                                                     </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.65rem;">J</small>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">J</small>
                                                                 </div>
                                                             {% endif %}
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">Aucune donnée</span>
+                                                    <span class="text-muted" style="font-size: 0.85rem;">Aucune donnée</span>
                                                 {% endif %}
                                             </td>
-                                            <td>
+                                            <td style="font-size: 0.85rem;">
                                                 {% if dernierReleve %}
                                                     <div>
-                                                        <strong>{{ dernierReleve.dateReleve|date('d/m/Y') }}</strong>
+                                                        <strong style="font-size: 0.9rem;">{{ dernierReleve.dateReleve|date('d/m/Y') }}</strong>
                                                         <br>
-                                                        <small class="text-muted">
-                                                            N: {{ dernierReleve.compteurNoir ?? '-' }} | 
+                                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                                            N: {{ dernierReleve.compteurNoir ?? '-' }}<br>
                                                             C: {{ dernierReleve.compteurCouleur ?? '-' }}
                                                         </small>
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">Aucun relevé</span>
+                                                    <span class="text-muted" style="font-size: 0.8rem;">Aucun scan</span>
                                                 {% endif %}
                                             </td>
                                         </tr>

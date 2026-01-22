@@ -23,6 +23,10 @@ class ImprimanteType extends AbstractType
             ->add('emplacement')
             ->add('suivieParService')
             ->add('statut')
+            ->add('dualScan', null, [
+                'label' => 'Scanner Automatique (A)',
+                'help' => 'Scanner recto-verso automatique'
+            ])
             ->add('notes')
             ->add('site', EntityType::class, [
                 'class' => Site::class,
