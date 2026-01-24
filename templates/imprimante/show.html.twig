@@ -106,22 +106,26 @@
                         </thead>
                         <tbody>
                             {% for releve in releves %}
-                                {% set prevReleve = loop.index < releves|length ? releves[loop.index] : null %}
+                                {# Comparer avec le relevé suivant chronologiquement (plus ancien dans la liste triée DESC) #}
+                                {# Les relevés sont triés du plus récent au plus ancien, donc le suivant dans la liste est plus ancien #}
+                                {% set nextReleve = loop.index < releves|length ? releves[loop.index] : null %}
                                 <tr>
                                     <td><strong>{{ releve.dateReleve|date('d/m/Y H:i') }}</strong></td>
                                     <td>{{ releve.compteurNoir ?? '-' }}</td>
                                     <td>{{ releve.compteurCouleur ?? '-' }}</td>
                                     <td>{{ releve.compteurFax ?? '-' }}</td>
                                     <td>
-                                        {% if prevReleve %}
-                                            {% set diffNoir = releve.compteurNoir and prevReleve.compteurNoir ? (releve.compteurNoir - prevReleve.compteurNoir) : null %}
-                                            {% set diffCouleur = releve.compteurCouleur and prevReleve.compteurCouleur ? (releve.compteurCouleur - prevReleve.compteurCouleur) : null %}
+                                        {% if nextReleve %}
+                                            {# Calculer l'évolution : relevé actuel (plus récent) - relevé suivant (plus ancien) #}
+                                            {# Les compteurs augmentent avec le temps, donc la différence devrait être positive #}
+                                            {% set diffNoir = releve.compteurNoir is not null and nextReleve.compteurNoir is not null ? (releve.compteurNoir - nextReleve.compteurNoir) : null %}
+                                            {% set diffCouleur = releve.compteurCouleur is not null and nextReleve.compteurCouleur is not null ? (releve.compteurCouleur - nextReleve.compteurCouleur) : null %}
                                             <small class="text-muted">
                                                 {% if diffNoir is not null %}
-                                                    N: <span class="badge bg-{{ diffNoir > 0 ? 'success' : 'secondary' }}">{{ diffNoir > 0 ? '+' : '' }}{{ diffNoir }}</span>
+                                                    N: <span class="badge bg-{{ diffNoir >= 0 ? 'success' : 'danger' }}">{{ diffNoir >= 0 ? '+' : '' }}{{ diffNoir }}</span>
                                                 {% endif %}
                                                 {% if diffCouleur is not null %}
-                                                    C: <span class="badge bg-{{ diffCouleur > 0 ? 'info' : 'secondary' }}">{{ diffCouleur > 0 ? '+' : '' }}{{ diffCouleur }}</span>
+                                                    C: <span class="badge bg-{{ diffCouleur >= 0 ? 'info' : 'danger' }}">{{ diffCouleur >= 0 ? '+' : '' }}{{ diffCouleur }}</span>
                                                 {% endif %}
                                             </small>
                                         {% else %}

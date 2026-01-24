@@ -86,11 +86,11 @@ class ImportCsvService
                     continue;
                 }
 
-                // Valider les données essentielles : CUSTOMER, MODEL, BRAND, READING_DATE
+                // Valider les données essentielles : CUSTOMER, MODEL, BRAND, lAST_SCAN_DATE
                 $customer = trim($data['CUSTOMER'] ?? '');
                 $model = trim($data['MODEL'] ?? '');
                 $brand = trim($data['BRAND'] ?? '');
-                $readingDate = trim($data['READING_DATE'] ?? '');
+                $readingDate = trim($data['LAST_SCAN_DATE'] ?? '');
                 
                 if (empty($customer) || empty($model) || empty($brand) || empty($readingDate)) {
                     $skipped++;
@@ -269,17 +269,7 @@ class ImportCsvService
     ): Imprimante {
         $em = $this->getEntityManager();
         
-        // Chercher d'abord par IP (plus fiable)
-        if ($ipAddress) {
-            $imprimante = $em->getRepository(Imprimante::class)
-                ->findOneBy(['adresseIp' => $ipAddress]);
-            
-            if ($imprimante) {
-                return $imprimante;
-            }
-        }
-
-        // Sinon chercher par numéro de série
+        // Chercher d'abord par numero de serie (plus fiable)
         if ($numeroSerie) {
             $imprimante = $em->getRepository(Imprimante::class)
                 ->findOneBy(['numeroSerie' => $numeroSerie]);
@@ -288,6 +278,8 @@ class ImportCsvService
                 return $imprimante;
             }
         }
+
+        
 
         // Créer une nouvelle imprimante
         $imprimante = new Imprimante();
@@ -308,33 +300,43 @@ class ImportCsvService
         // LAST_SCAN_DATE = Date réelle du scan de l'imprimante (date du relevé)
         $dateReleve = $this->parseDate($data['LAST_SCAN_DATE'] ?? null);
         if (!$dateReleve) {
-            // Fallback sur READING_DATE si LAST_SCAN_DATE n'est pas disponible
-            $dateReleve = $this->parseDate($data['READING_DATE'] ?? null);
-            if (!$dateReleve) {
-                return; // Pas de date = pas de relevé
-            }
-        }
-
-        // READING_DATE = Date de réception du rapport CSV
-        $dateReceptionRapport = $this->parseDate($data['READING_DATE'] ?? null) ?? new \DateTimeImmutable();
-
-        $em = $this->getEntityManager();
-        
-        // Vérifier si un relevé existe déjà pour cette combinaison dateReleve + dateReceptionRapport
-        // Cela permet de garder l'historique complet de chaque rapport CSV reçu
-        $existing = $em->getRepository(ReleveCompteur::class)
-            ->findOneBy([
-                'imprimante' => $imprimante,
-                'dateReleve' => $dateReleve,
-                'dateReceptionRapport' => $dateReceptionRapport
-            ]);
-
-        // Si un relevé existe déjà pour cette combinaison exacte, ne pas créer de doublon
-        if ($existing) {
+            // Si LAST_SCAN_DATE n'est pas disponible, on ignore cette ligne
             return;
         }
 
-        // Créer un nouveau relevé pour conserver l'historique complet
+        // READING_DATE = Date de réception du rapport CSV (conservée pour information mais non utilisée comme clé)
+        $dateReceptionRapport = $this->parseDate($data['LAST_SCAN_DATE'] ?? null) ?? new \DateTimeImmutable();
+
+        $em = $this->getEntityManager();
+        
+        // Vérifier si un relevé existe déjà pour cette date de scan (LAST_SCAN_DATE)
+        // On utilise uniquement dateReleve comme clé unique
+        $existing = $em->getRepository(ReleveCompteur::class)
+            ->findOneBy([
+                'imprimante' => $imprimante,
+                'dateReleve' => $dateReleve
+            ]);
+
+        // Si un relevé existe déjà pour cette date de scan, mettre à jour avec les nouvelles données
+        // IMPORTANT: On utilise uniquement LAST_SCAN_DATE comme référence, pas READING_DATE
+        if ($existing) {
+            // Mettre à jour seulement si les nouvelles données sont valides
+            $nouveauNoir = $this->parseInt($data['MONO_LIFE_COUNT'] ?? null);
+            $nouveauCouleur = $this->parseInt($data['COLOR_LIFE_COUNT'] ?? null);
+            $nouveauFax = $this->parseInt($data['FAX_COUNT'] ?? null);
+            
+            // Valider que les compteurs ne diminuent pas (sauf si c'est une réinitialisation légitime)
+            // Pour l'instant, on accepte la mise à jour même si les valeurs diminuent
+            // (cela peut arriver en cas de réinitialisation du compteur ou d'erreur de scan)
+            $existing->setCompteurNoir($nouveauNoir);
+            $existing->setCompteurCouleur($nouveauCouleur);
+            $existing->setCompteurFax($nouveauFax);
+            $existing->setDateReceptionRapport($dateReceptionRapport);
+            $existing->setSource('csv');
+            return;
+        }
+
+        // Créer un nouveau relevé
         $releve = new ReleveCompteur();
         $releve->setImprimante($imprimante);
         $releve->setDateReleve($dateReleve);
@@ -355,33 +357,79 @@ class ImportCsvService
         // LAST_SCAN_DATE = Date réelle du scan de l'imprimante (date de capture)
         $dateCapture = $this->parseDate($data['LAST_SCAN_DATE'] ?? null);
         if (!$dateCapture) {
-            // Fallback sur READING_DATE si LAST_SCAN_DATE n'est pas disponible
-            $dateCapture = $this->parseDate($data['READING_DATE'] ?? null);
-            if (!$dateCapture) {
-                return;
-            }
-        }
-
-        // READING_DATE = Date de réception du rapport CSV
-        $dateReceptionRapport = $this->parseDate($data['READING_DATE'] ?? null) ?? new \DateTimeImmutable();
-
-        $em = $this->getEntityManager();
-        
-        // Vérifier si un état existe déjà pour cette combinaison dateCapture + dateReceptionRapport
-        // Cela permet de garder l'historique complet de chaque rapport CSV reçu
-        $existing = $em->getRepository(EtatConsommable::class)
-            ->findOneBy([
-                'imprimante' => $imprimante,
-                'dateCapture' => $dateCapture,
-                'dateReceptionRapport' => $dateReceptionRapport
-            ]);
-
-        // Si un état existe déjà pour cette combinaison exacte, ne pas créer de doublon
-        if ($existing) {
+            // Si LAST_SCAN_DATE n'est pas disponible, on ignore cette ligne
             return;
         }
 
-        // Créer un nouvel état pour conserver l'historique complet
+        // READING_DATE = Date de réception du rapport CSV (conservée pour information mais non utilisée comme clé)
+        $dateReceptionRapport = $this->parseDate($data['Last_SCAN_DATE'] ?? null) ?? new \DateTimeImmutable();
+
+        $em = $this->getEntityManager();
+        
+        // Vérifier si un état existe déjà pour cette date de scan (LAST_SCAN_DATE)
+        // On utilise uniquement dateCapture comme clé unique
+        $existing = $em->getRepository(EtatConsommable::class)
+            ->findOneBy([
+                'imprimante' => $imprimante,
+                'dateCapture' => $dateCapture
+            ]);
+
+        // Si un état existe déjà pour cette date de scan, mettre à jour avec les nouvelles données
+        if ($existing) {
+            $etat = $existing;
+            $etat->setDateReceptionRapport($dateReceptionRapport);
+            
+            // Mettre à jour les niveaux de toner
+            $noir = $this->parsePourcent($data['BLACK_LEVEL'] ?? null);
+            if ($noir !== null) {
+                $etat->setNoirPourcent($noir);
+            }
+            
+            $cyan = $this->parsePourcent($data['CYAN_LEVEL'] ?? null);
+            if ($cyan !== null) {
+                $etat->setCyanPourcent($cyan);
+            }
+            
+            $magenta = $this->parsePourcent($data['MAGENTA_LEVEL'] ?? null);
+            if ($magenta !== null) {
+                $etat->setMagentaPourcent($magenta);
+            }
+            
+            $jaune = $this->parsePourcent($data['YELLOW_LEVEL'] ?? null);
+            if ($jaune !== null) {
+                $etat->setJaunePourcent($jaune);
+            }
+            
+            $bac = $this->parsePourcent($data['WASTE_LEVEL'] ?? null);
+            if ($bac !== null) {
+                $etat->setBacRecuperation($bac);
+            }
+            
+            // Dates prévisionnelles d'épuisement
+            $dateEpuisementNoir = $this->parseDate($data['BLACK_DEPLETION_DATE'] ?? null);
+            if ($dateEpuisementNoir !== null) {
+                $etat->setDateEpuisementNoir($dateEpuisementNoir);
+            }
+            
+            $dateEpuisementCyan = $this->parseDate($data['CYAN_DEPLETION_DATE'] ?? null);
+            if ($dateEpuisementCyan !== null) {
+                $etat->setDateEpuisementCyan($dateEpuisementCyan);
+            }
+            
+            $dateEpuisementMagenta = $this->parseDate($data['MAGENTA_DEPLETION_DATE'] ?? null);
+            if ($dateEpuisementMagenta !== null) {
+                $etat->setDateEpuisementMagenta($dateEpuisementMagenta);
+            }
+            
+            $dateEpuisementJaune = $this->parseDate($data['YELLOW_DEPLETION_DATE'] ?? null);
+            if ($dateEpuisementJaune !== null) {
+                $etat->setDateEpuisementJaune($dateEpuisementJaune);
+            }
+            
+            return;
+        }
+
+        // Créer un nouvel état
         $etat = new EtatConsommable();
         $etat->setImprimante($imprimante);
         $etat->setDateCapture($dateCapture);

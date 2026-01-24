@@ -128,6 +128,133 @@
                     </ul>
                 </li>
             </ul>
+            <ul class="navbar-nav">
+                {% if app.user %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ app.user.nom ?? app.user.email }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{{ path('app_logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Déconnexion
+                            </a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light" type="button" id="btnLogin" onclick="showLoginForm()">
+                            <i class="bi bi-box-arrow-in-right"></i> Connexion
+                        </button>
+                    </li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </nav>
+
+{# Formulaire de connexion masqué #}
+<div id="loginFormContainer" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex align-items-center justify-content-center" style="display: none; z-index: 9999;">
+    <div class="card shadow-lg" style="max-width: 400px; width: 90%;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> Connexion</h5>
+            <button type="button" class="btn-close btn-close-white" onclick="hideLoginForm()" aria-label="Fermer"></button>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_login') }}" id="loginForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <div class="mb-3">
+                    <label for="inputEmailModal" class="form-label">Email</label>
+                    <input 
+                        type="email" 
+                        name="_username" 
+                        id="inputEmailModal" 
+                        class="form-control" 
+                        autocomplete="email" 
+                        required 
+                        autofocus
+                        placeholder="exemple@email.com"
+                    >
+                </div>
+
+                <div class="mb-3">
+                    <label for="inputPasswordModal" class="form-label">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        name="_password" 
+                        id="inputPasswordModal" 
+                        class="form-control" 
+                        autocomplete="current-password" 
+                        required
+                        placeholder="••••••••"
+                    >
+                </div>
+
+                <div class="d-grid">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLoginForm() {
+    // Vider le contenu principal
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+    
+    // Afficher le formulaire de connexion
+    const loginContainer = document.getElementById('loginFormContainer');
+    if (loginContainer) {
+        loginContainer.style.display = 'flex';
+        // Focus sur le champ email
+        setTimeout(() => {
+            const emailInput = document.getElementById('inputEmailModal');
+            if (emailInput) {
+                emailInput.focus();
+            }
+        }, 100);
+    }
+}
+
+function hideLoginForm() {
+    // Masquer le formulaire de connexion
+    const loginContainer = document.getElementById('loginFormContainer');
+    if (loginContainer) {
+        loginContainer.style.display = 'none';
+    }
+    
+    // Réafficher le contenu principal
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.style.display = 'block';
+    }
+}
+
+// Fermer avec la touche Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const loginContainer = document.getElementById('loginFormContainer');
+        if (loginContainer && loginContainer.style.display === 'flex') {
+            hideLoginForm();
+        }
+    }
+});
+
+// Fermer en cliquant sur le fond
+document.addEventListener('DOMContentLoaded', function() {
+    const loginContainer = document.getElementById('loginFormContainer');
+    if (loginContainer) {
+        loginContainer.addEventListener('click', function(event) {
+            if (event.target === this) {
+                hideLoginForm();
+            }
+        });
+    }
+});
+</script>
