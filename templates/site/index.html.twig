@@ -9,223 +9,120 @@
             <i class="bi bi-building"></i> Liste des Sites
         </h1>
         <div class="d-flex gap-2 flex-grow-1 justify-content-end" style="max-width: 600px;">
-            <form method="GET" action="{{ path('app_site_index') }}" class="d-flex flex-grow-1">
-                <div class="input-group">
-                    <input type="text" 
-                           name="search" 
-                           class="form-control" 
-                           placeholder="Rechercher par nom de site ou numéro de série..." 
-                           value="{{ search ?? '' }}"
-                           aria-label="Rechercher">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="bi bi-search"></i> Rechercher
-                    </button>
-                    {% if search %}
-                        <a href="{{ path('app_site_index') }}" class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-x-circle"></i> Effacer
-                        </a>
-                    {% endif %}
-                </div>
-            </form>
+            <div class="input-group flex-grow-1">
+                <input type="text" 
+                       id="searchInput"
+                       class="form-control" 
+                       placeholder="Rechercher par nom de site ou numéro de série..." 
+                       value="{{ search ?? '' }}"
+                       aria-label="Rechercher">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                    <i class="bi bi-search"></i> Rechercher
+                </button>
+                <button class="btn btn-outline-secondary" type="button" id="clearButton" style="display: none;">
+                    <i class="bi bi-x-circle"></i> Effacer
+                </button>
+            </div>
         </div>
         <a href="{{ path('app_site_new') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nouveau Site
         </a>
     </div>
 
-    {% if search %}
-        <div class="alert alert-info mb-3">
-            <i class="bi bi-info-circle"></i> Résultats de recherche pour : <strong>"{{ search }}"</strong>
-            <a href="{{ path('app_site_index') }}" class="btn btn-sm btn-outline-primary ms-2">
-                <i class="bi bi-x-circle"></i> Effacer la recherche
-            </a>
-        </div>
-    {% endif %}
+    <div id="searchResults">
+        {% include 'site/_results.html.twig' %}
+    </div>
+    </div>
 
-    {% if sites is empty %}
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i> 
-            {% if search %}
-                Aucun site ou imprimante trouvé pour : <strong>"{{ search }}"</strong>
-            {% else %}
-                Aucun site trouvé.
-            {% endif %}
-        </div>
-    {% else %}
-        {% for site in sites %}
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0">
-                            <i class="bi bi-building"></i> 
-                            <a href="{{ path('app_site_show', {'id': site.id}) }}" class="text-white text-decoration-none">
-                                {{ site.nomSite }}
-                            </a>
-                            {% if site.principal %}
-                                <span class="badge bg-warning text-dark ms-2">Principal</span>
-                            {% endif %}
-                            {% if not site.actif %}
-                                <span class="badge bg-secondary ms-2">Inactif</span>
-                            {% endif %}
-                        </h5>
-                        <small class="text-white-50">Client : {{ site.client.nom }}</small>
-                    </div>
-                    <div>
-                        <a href="{{ path('app_site_show', {'id': site.id}) }}" class="btn btn-sm btn-light me-2">
-                            <i class="bi bi-eye"></i> Voir
-                        </a>
-                        <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-sm btn-light">
-                            <i class="bi bi-pencil"></i> Modifier
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    {% if site.imprimantes is empty %}
-                        <p class="text-muted mb-0">
-                            <i class="bi bi-info-circle"></i> Aucune imprimante sur ce site.
-                        </p>
-                    {% else %}
-                        <div class="table-responsive">
-                            <table class="table table-hover table-sm">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 12%;">Modèle</th>
-                                        <th style="width: 10%;">Fabricant</th>
-                                        <th class="d-none d-md-table-cell" style="width: 10%;">N° Série</th>
-                                        <th class="d-none d-md-table-cell" style="width: 10%;">IP</th>
-                                        <th style="width: 8%;">Géré</th>
-                                        <th style="width: 35%;">Niveaux d'encre</th>
-                                        <th style="width: 15%;">Dernier scan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for imprimante in site.imprimantes %}
-                                        {% set dernierEtat = imprimante.getDernierEtatConsommable() %}
-                                        {% set dernierReleve = imprimante.getDernierReleve() %}
-                                        <tr>
-                                            <td style="white-space: nowrap;">
-                                                <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="text-decoration-none">
-                                                    <strong style="font-size: 0.9rem;">{{ imprimante.modele.referenceModele }}{% if imprimante.dualScan %} A{% endif %}</strong>
-                                                </a>
-                                            </td>
-                                            <td style="font-size: 0.85rem;">{{ imprimante.modele.fabricant.nomFabricant }}</td>
-                                            <td class="d-none d-md-table-cell" style="font-size: 0.8rem;"><code>{{ imprimante.numeroSerie }}</code></td>
-                                            <td class="d-none d-md-table-cell" style="font-size: 0.8rem;">
-                                                {% if imprimante.adresseIp %}
-                                                    <code>{{ imprimante.adresseIp }}</code>
-                                                {% else %}
-                                                    <span class="text-muted">-</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-{{ imprimante.suivieParService ? 'success' : 'secondary' }}" style="font-size: 0.75rem;">
-                                                    {{ imprimante.suivieParService ? 'Oui' : 'Non' }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {% if dernierEtat %}
-                                                    <div class="d-flex gap-1 align-items-center flex-wrap" style="max-width: 100%;">
-                                                        {# Noir #}
-                                                        {% if dernierEtat.noirPourcent is not null %}
-                                                            <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
-                                                                <div class="progress" style="height: 16px;">
-                                                                    <div class="progress-bar bg-dark text-white d-flex align-items-center justify-content-center" 
-                                                                         role="progressbar" 
-                                                                         style="width: {{ dernierEtat.noirPourcent }}%; font-size: 0.65rem;" 
-                                                                         aria-valuenow="{{ dernierEtat.noirPourcent }}" 
-                                                                         aria-valuemin="0" 
-                                                                         aria-valuemax="100"
-                                                                         title="Noir: {{ dernierEtat.noirPourcent }}%">
-                                                                        <strong>{{ dernierEtat.noirPourcent }}%</strong>
-                                                                    </div>
-                                                                </div>
-                                                                <small class="text-muted d-block text-center" style="font-size: 0.6rem;">N</small>
-                                                            </div>
-                                                        {% endif %}
-                                                        
-                                                        {% if imprimante.modele.couleur %}
-                                                            {# Cyan #}
-                                                            {% if dernierEtat.cyanPourcent is not null %}
-                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
-                                                                    <div class="progress" style="height: 16px;">
-                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
-                                                                             role="progressbar" 
-                                                                             style="width: {{ dernierEtat.cyanPourcent }}%; background-color: #00bcd4; font-size: 0.65rem;" 
-                                                                             aria-valuenow="{{ dernierEtat.cyanPourcent }}" 
-                                                                             aria-valuemin="0" 
-                                                                             aria-valuemax="100"
-                                                                             title="Cyan: {{ dernierEtat.cyanPourcent }}%">
-                                                                            <strong>{{ dernierEtat.cyanPourcent }}%</strong>
-                                                                        </div>
-                                                                    </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">C</small>
-                                                                </div>
-                                                            {% endif %}
-                                                            
-                                                            {# Magenta #}
-                                                            {% if dernierEtat.magentaPourcent is not null %}
-                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
-                                                                    <div class="progress" style="height: 16px;">
-                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
-                                                                             role="progressbar" 
-                                                                             style="width: {{ dernierEtat.magentaPourcent }}%; background-color: #e91e63; font-size: 0.65rem;" 
-                                                                             aria-valuenow="{{ dernierEtat.magentaPourcent }}" 
-                                                                             aria-valuemin="0" 
-                                                                             aria-valuemax="100"
-                                                                             title="Magenta: {{ dernierEtat.magentaPourcent }}%">
-                                                                            <strong>{{ dernierEtat.magentaPourcent }}%</strong>
-                                                                        </div>
-                                                                    </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">M</small>
-                                                                </div>
-                                                            {% endif %}
-                                                            
-                                                            {# Jaune #}
-                                                            {% if dernierEtat.jaunePourcent is not null %}
-                                                                <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
-                                                                    <div class="progress" style="height: 16px;">
-                                                                        <div class="progress-bar text-dark d-flex align-items-center justify-content-center" 
-                                                                             role="progressbar" 
-                                                                             style="width: {{ dernierEtat.jaunePourcent }}%; background-color: #ffeb3b; font-size: 0.65rem;" 
-                                                                             aria-valuenow="{{ dernierEtat.jaunePourcent }}" 
-                                                                             aria-valuemin="0" 
-                                                                             aria-valuemax="100"
-                                                                             title="Jaune: {{ dernierEtat.jaunePourcent }}%">
-                                                                            <strong>{{ dernierEtat.jaunePourcent }}%</strong>
-                                                                        </div>
-                                                                    </div>
-                                                                    <small class="text-muted d-block text-center" style="font-size: 0.6rem;">J</small>
-                                                                </div>
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    </div>
-                                                {% else %}
-                                                    <span class="text-muted" style="font-size: 0.85rem;">Aucune donnée</span>
-                                                {% endif %}
-                                            </td>
-                                            <td style="font-size: 0.85rem;">
-                                                {% if dernierReleve %}
-                                                    <div>
-                                                        <strong style="font-size: 0.9rem;">{{ dernierReleve.dateReleve|date('d/m/Y') }}</strong>
-                                                        <br>
-                                                        <small class="text-muted" style="font-size: 0.75rem;">
-                                                            N: {{ dernierReleve.compteurNoir ?? '-' }}<br>
-                                                            C: {{ dernierReleve.compteurCouleur ?? '-' }}
-                                                        </small>
-                                                    </div>
-                                                {% else %}
-                                                    <span class="text-muted" style="font-size: 0.8rem;">Aucun scan</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% endfor %}
-    {% endif %}
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const clearButton = document.getElementById('clearButton');
+    const searchResults = document.getElementById('searchResults');
+    const searchUrl = '{{ path('app_site_index') }}';
+    
+    let searchTimeout;
+    let isSearching = false;
+
+    // Fonction pour effectuer la recherche
+    function performSearch(query) {
+        if (isSearching) return;
+        
+        isSearching = true;
+        const url = searchUrl + '?search=' + encodeURIComponent(query) + '&ajax=1';
+        
+        // Afficher un indicateur de chargement
+        searchResults.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur réseau');
+            }
+            return response.text();
+        })
+        .then(html => {
+            searchResults.innerHTML = html;
+            isSearching = false;
+            
+            // Afficher/masquer le bouton Effacer
+            if (query.trim() !== '') {
+                clearButton.style.display = '';
+            } else {
+                clearButton.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la recherche:', error);
+            searchResults.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Une erreur est survenue lors de la recherche.</div>';
+            isSearching = false;
+        });
+    }
+
+    // Recherche en temps réel avec debounce (500ms)
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        clearTimeout(searchTimeout);
+        
+        searchTimeout = setTimeout(function() {
+            performSearch(query);
+        }, 500); // Attendre 500ms après la dernière frappe
+    });
+
+    // Recherche au clic sur le bouton
+    searchButton.addEventListener('click', function() {
+        const query = searchInput.value.trim();
+        performSearch(query);
+    });
+
+    // Recherche avec la touche Entrée
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            performSearch(query);
+        }
+    });
+
+    // Effacer la recherche
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        performSearch('');
+    });
+
+    // Afficher le bouton Effacer si une recherche est présente au chargement
+    if (searchInput.value.trim() !== '') {
+        clearButton.style.display = '';
+    }
+});
+</script>
 {% endblock %}

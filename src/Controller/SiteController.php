@@ -17,6 +17,7 @@ final class SiteController extends AbstractController
     public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
         $search = $request->query->get('search', '');
+        $isAjax = $request->isXmlHttpRequest() || $request->query->getBoolean('ajax', false);
         
         // Charger les sites avec leurs imprimantes, modèles, fabricants, relevés et états consommables
         $qb = $entityManager
@@ -58,6 +59,14 @@ final class SiteController extends AbstractController
             }
         }
         $sites = array_values($uniqueSites);
+
+        // Si requête AJAX, retourner uniquement le contenu des résultats
+        if ($isAjax) {
+            return $this->render('site/_results.html.twig', [
+                'sites' => $sites,
+                'search' => $search,
+            ]);
+        }
 
         return $this->render('site/index.html.twig', [
             'sites' => $sites,

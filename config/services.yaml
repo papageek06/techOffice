@@ -21,3 +21,8 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    
+    # Configuration du service SMS
+    # En production, remplacer MockSmsSender par une implémentation réelle (Twilio, Nexmo, etc.)
+    App\Service\SmsSenderInterface:
+        class: App\Service\MockSmsSender

@@ -30,6 +30,15 @@ class UserType extends AbstractType
                     'class' => 'form-control'
                 ]
             ])
+            ->add('phoneNumber', TextType::class, [
+                'label' => 'Numéro de téléphone',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => '+33612345678'
+                ],
+                'help' => 'Format international recommandé (ex: +33612345678)'
+            ])
             ->add('roles', ChoiceType::class, [
                 'label' => 'Rôles',
                 'choices' => [
