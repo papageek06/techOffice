@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compatibilité - {{ piece_modele.piece.reference }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-link-45deg"></i> Compatibilité
+            </h1>
+            <p class="text-muted mb-0">
+                {{ piece_modele.piece.reference }} ↔ {{ piece_modele.modele.referenceModele }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_piece_modele_edit', {'id': piece_modele.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_piece_modele_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Pièce</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_piece_show', {'id': piece_modele.piece.id}) }}" class="text-decoration-none">
+                                <strong>{{ piece_modele.piece.reference }}</strong>
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ piece_modele.piece.designation }}</small>
+                        </dd>
+
+                        <dt class="col-sm-4">Modèle</dt>
+                        <dd class="col-sm-8">
+                            <strong>{{ piece_modele.modele.fabricant.nomFabricant }} {{ piece_modele.modele.referenceModele }}</strong>
+                        </dd>
+
+                        <dt class="col-sm-4">Rôle</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info fs-6">{{ piece_modele.role.value }}</span>
+                        </dd>
+
+                        {% if piece_modele.notes %}
+                            <dt class="col-sm-4">Notes</dt>
+                            <dd class="col-sm-8">{{ piece_modele.notes|nl2br }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_piece_modele_edit', {'id': piece_modele.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_piece_show', {'id': piece_modele.piece.id}) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-puzzle"></i> Voir la pièce
+                        </a>
+                        <a href="{{ path('app_modele_show', {'id': piece_modele.modele.id}) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-printer"></i> Voir le modèle
+                        </a>
+                        {{ include('piece_modele/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

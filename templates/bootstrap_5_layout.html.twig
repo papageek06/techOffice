@@ -5,8 +5,8 @@
         {{- form_label(form) -}}
         {{- form_widget(form) -}}
         {{- form_errors(form) -}}
-        {%- if form.help is defined and form.help -%}
-            <div class="form-text">{{ form.help }}</div>
+        {%- if form.vars.help is defined and form.vars.help -%}
+            <div class="form-text">{{ form.vars.help }}</div>
         {%- endif -%}
     </div>
 {%- endblock form_row -%}
@@ -22,7 +22,7 @@
             {% set label_attr = label_attr|merge({'class': (label_attr.class|default('') ~ ' form-label')|trim}) %}
         {%- endif -%}
         <label{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
-            {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters, translation_domain) -}}
+            {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters|default([]), translation_domain) -}}
             {%- if required -%}
                 <span class="text-danger">*</span>
             {%- endif -%}
@@ -60,7 +60,15 @@
     {%- endif -%}
     <select {{ block('widget_attributes') }}{% if multiple %} multiple="multiple"{% endif %}>
         {% if placeholder is not none -%}
-            <option value=""{% if required and (value is empty or (value is iterable and value|length == 0)) %} selected="selected"{% endif %}>{{ placeholder != '' ? (translation_domain is same as(false) ? placeholder : placeholder|trans(placeholder_translation_parameters, translation_domain)) }}</option>
+            <option value=""{% if required and (value is empty or (value is iterable and value|length == 0)) %} selected="selected"{% endif %}>
+                {%- if placeholder != '' -%}
+                    {%- if translation_domain is same as(false) -%}
+                        {{- placeholder -}}
+                    {%- else -%}
+                        {{- placeholder|trans(placeholder_translation_parameters|default([]), translation_domain) -}}
+                    {%- endif -%}
+                {%- endif -%}
+            </option>
         {%- endif -%}
         {%- if preferred_choices|length > 0 -%}
             {% set options = preferred_choices %}
@@ -79,7 +87,7 @@
         <input type="checkbox" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} class="form-check-input" />
         {% if label is not same as(false) -%}
             <label class="form-check-label"{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
-                {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters, translation_domain) -}}
+                {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters|default([]), translation_domain) -}}
             </label>
         {%- endif -%}
     </div>
@@ -90,7 +98,7 @@
         <input type="radio" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} class="form-check-input" />
         {% if label is not same as(false) -%}
             <label class="form-check-label"{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
-                {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters, translation_domain) -}}
+                {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters|default([]), translation_domain) -}}
             </label>
         {%- endif -%}
     </div>
@@ -118,7 +126,7 @@
         {%- endif -%}
     {%- endif -%}
     <button type="{{ type|default('button') }}" {{ block('button_attributes') }} class="btn btn-primary">
-        {{- translation_domain is same as(false) ? label : label|trans(button_translation_parameters, translation_domain) -}}
+        {{- translation_domain is same as(false) ? label : label|trans(button_translation_parameters|default([]), translation_domain) -}}
     </button>
 {%- endblock button_widget -%}
 

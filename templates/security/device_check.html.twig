@@ -87,8 +87,8 @@
                                     </div>
                                 {% endfor %}
                                 {{ form_errors(form.trustDuration) }}
-                                {% if form.trustDuration.help %}
-                                    <div class="form-text">{{ form.trustDuration.help }}</div>
+                                {% if form.trustDuration.vars.help is defined and form.trustDuration.vars.help %}
+                                    <div class="form-text">{{ form.trustDuration.vars.help }}</div>
                                 {% endif %}
                             </div>
                         </div>

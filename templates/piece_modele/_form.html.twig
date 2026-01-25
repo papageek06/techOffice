@@ -1,0 +1,28 @@
+{{ form_start(form) }}
+    <div class="row g-3">
+        <div class="col-12">
+            {{ form_row(form.piece, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.modele, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.role, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.notes, {'attr': {'class': 'form-control', 'rows': 3}}) }}
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Enregistrer
+        </button>
+        <a href="{{ path('app_piece_modele_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Annuler
+        </a>
+    </div>
+{{ form_end(form) }}

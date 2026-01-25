@@ -95,10 +95,50 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_site_show', methods: ['GET'])]
-    public function show(Site $site): Response
+    public function show(Site $site, EntityManagerInterface $entityManager): Response
     {
+        // Charger toutes les données nécessaires avec eager loading pour éviter N+1
+        $site = $entityManager->getRepository(Site::class)
+            ->createQueryBuilder('s')
+            ->leftJoin('s.imprimantes', 'i')
+            ->leftJoin('i.modele', 'm')
+            ->leftJoin('m.fabricant', 'f')
+            ->leftJoin('i.relevesCompteur', 'r')
+            ->leftJoin('i.etatsConsommable', 'e')
+            ->leftJoin('s.stockLocations', 'sl')
+            ->leftJoin('sl.stockItems', 'si')
+            ->leftJoin('si.piece', 'p')
+            ->addSelect('i')
+            ->addSelect('m')
+            ->addSelect('f')
+            ->addSelect('r')
+            ->addSelect('e')
+            ->addSelect('sl')
+            ->addSelect('si')
+            ->addSelect('p')
+            ->where('s.id = :id')
+            ->setParameter('id', $site->getId())
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$site) {
+            throw $this->createNotFoundException('Site non trouvé');
+        }
+
         return $this->render('site/show.html.twig', [
             'site' => $site,
+        ]);
+    }
+
+    #[Route('/{id}/alertes', name: 'app_site_alertes', methods: ['GET'])]
+    public function getAlertes(Site $site, EntityManagerInterface $entityManager): Response
+    {
+        // Endpoint AJAX pour récupérer le nombre d'alertes
+        // TODO: Implémenter la logique avec TonerAlertService
+        $alertesCount = 0; // Placeholder
+        
+        return $this->json([
+            'count' => $alertesCount,
         ]);
     }
 

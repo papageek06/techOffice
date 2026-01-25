@@ -1,0 +1,39 @@
+{{ form_start(form) }}
+    <div class="row g-3">
+        <div class="col-12">
+            {{ form_row(form.reference, {'attr': {'class': 'form-control'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.designation, {'attr': {'class': 'form-control'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.typePiece, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.couleur, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                {{ form_widget(form.actif, {'attr': {'class': 'form-check-input'}}) }}
+                {{ form_label(form.actif, null, {'label_attr': {'class': 'form-check-label'}}) }}
+            </div>
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.notes, {'attr': {'class': 'form-control', 'rows': 3}}) }}
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Enregistrer
+        </button>
+        <a href="{{ path('app_piece_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Annuler
+        </a>
+    </div>
+{{ form_end(form) }}

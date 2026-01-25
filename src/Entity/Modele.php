@@ -28,9 +28,14 @@ class Modele
     #[ORM\OneToMany(mappedBy: 'modele', targetEntity: Imprimante::class)]
     private Collection $imprimantes;
 
+    /** @var Collection<int, PieceModele> */
+    #[ORM\OneToMany(mappedBy: 'modele', targetEntity: PieceModele::class, orphanRemoval: true)]
+    private Collection $pieceModeles;
+
     public function __construct()
     {
         $this->imprimantes = new ArrayCollection();
+        $this->pieceModeles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -91,6 +96,29 @@ class Modele
     public function removeImprimante(Imprimante $imprimante): self
     {
         $this->imprimantes->removeElement($imprimante);
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PieceModele>
+     */
+    public function getPieceModeles(): Collection
+    {
+        return $this->pieceModeles;
+    }
+
+    public function addPieceModele(PieceModele $pieceModele): self
+    {
+        if (!$this->pieceModeles->contains($pieceModele)) {
+            $this->pieceModeles->add($pieceModele);
+            $pieceModele->setModele($this);
+        }
+        return $this;
+    }
+
+    public function removePieceModele(PieceModele $pieceModele): self
+    {
+        $this->pieceModeles->removeElement($pieceModele);
         return $this;
     }
 }

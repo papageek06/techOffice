@@ -1,34 +1,574 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Site{% endblock %}
+{% block title %}{{ site.nomSite }} - Détails{% endblock %}
 
 {% block body %}
-    <h1>Site</h1>
+<div class="container-fluid px-3 px-md-4">
+    {# En-tête du site #}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                        <div>
+                            <h1 class="h3 mb-2 mb-md-0">
+                                <i class="bi bi-building"></i> {{ site.nomSite }}
+                            </h1>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-light text-dark">
+                                    <i class="bi bi-person-badge"></i> {{ site.client.nom }}
+                                </span>
+                                {% if site.principal %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-star-fill"></i> Site Principal
+                                    </span>
+                                {% endif %}
+                                {% if site.actif %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Actif
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-x-circle"></i> Inactif
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-light">
+                                <i class="bi bi-pencil"></i> <span class="d-none d-md-inline">Modifier</span>
+                            </a>
+                            <a href="{{ path('app_site_index') }}" class="btn btn-outline-light">
+                                <i class="bi bi-arrow-left"></i> <span class="d-none d-md-inline">Retour</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ site.id }}</td>
-            </tr>
-            <tr>
-                <th>NomSite</th>
-                <td>{{ site.nomSite }}</td>
-            </tr>
-            <tr>
-                <th>Principal</th>
-                <td>{{ site.principal ? 'Yes' : 'No' }}</td>
-            </tr>
-            <tr>
-                <th>Actif</th>
-                <td>{{ site.actif ? 'Yes' : 'No' }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {# Statistiques rapides #}
+    <div class="row mb-4" id="statsCards">
+        <div class="col-6 col-md-3 mb-3 mb-md-0">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-printer fs-1 text-primary"></i>
+                    <h3 class="mt-2 mb-0">{{ site.imprimantes|length }}</h3>
+                    <small class="text-muted">Imprimante(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3 mb-md-0">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-box-seam fs-1 text-info"></i>
+                    <h3 class="mt-2 mb-0">{{ site.stockLocations|length }}</h3>
+                    <small class="text-muted">Stock(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3 mb-md-0">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-check-circle fs-1 text-success"></i>
+                    <h3 class="mt-2 mb-0">{{ site.imprimantes|filter(i => i.suivieParService)|length }}</h3>
+                    <small class="text-muted">Suivie(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3 mb-md-0">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                    <h3 class="mt-2 mb-0" id="alertesCount">-</h3>
+                    <small class="text-muted">Alerte(s)</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <a href="{{ path('app_site_index') }}">back to list</a>
+    {# Onglets principaux #}
+    <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="imprimantes-tab" data-bs-toggle="tab" data-bs-target="#imprimantes" type="button" role="tab">
+                <i class="bi bi-printer"></i> <span class="d-none d-md-inline">Imprimantes</span>
+                <span class="badge bg-primary ms-2">{{ site.imprimantes|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="stocks-tab" data-bs-toggle="tab" data-bs-target="#stocks" type="button" role="tab">
+                <i class="bi bi-box-seam"></i> <span class="d-none d-md-inline">Stocks</span>
+                <span class="badge bg-info ms-2">{{ site.stockLocations|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+                <i class="bi bi-info-circle"></i> <span class="d-none d-md-inline">Informations</span>
+            </button>
+        </li>
+    </ul>
 
-    <a href="{{ path('app_site_edit', {'id': site.id}) }}">edit</a>
+    <div class="tab-content" id="mainTabsContent">
+        {# Onglet Imprimantes #}
+        <div class="tab-pane fade show active" id="imprimantes" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0">
+                        <i class="bi bi-printer"></i> Imprimantes du site
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="searchImprimantes" class="form-control form-control-sm" placeholder="Rechercher..." style="max-width: 200px;">
+                        <a href="{{ path('app_imprimante_new') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> <span class="d-none d-md-inline">Ajouter</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if site.imprimantes is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-printer fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune imprimante sur ce site.</p>
+                            <a href="{{ path('app_imprimante_new') }}" class="btn btn-sm btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Ajouter une imprimante
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive" id="imprimantesTableContainer">
+                            <table class="table table-hover mb-0" id="imprimantesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 15%;">Modèle</th>
+                                        <th style="width: 12%;" class="d-none d-md-table-cell">Fabricant</th>
+                                        <th style="width: 12%;" class="d-none d-lg-table-cell">N° Série</th>
+                                        <th style="width: 10%;" class="d-none d-lg-table-cell">IP</th>
+                                        <th style="width: 8%;">Géré</th>
+                                        <th style="width: 30%;">Niveaux d'encre</th>
+                                        <th style="width: 13%;">Dernier scan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for imprimante in site.imprimantes %}
+                                        {% set dernierEtat = imprimante.getDernierEtatConsommable() %}
+                                        {% set dernierReleve = imprimante.getDernierReleve() %}
+                                        <tr data-search="{{ imprimante.modele.referenceModele|lower }} {{ imprimante.numeroSerie|lower }} {{ imprimante.modele.fabricant.nomFabricant|lower }}">
+                                            <td>
+                                                <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="text-decoration-none fw-bold">
+                                                    {{ imprimante.modele.referenceModele }}{% if imprimante.dualScan %} <span class="badge bg-secondary">A</span>{% endif %}
+                                                </a>
+                                            </td>
+                                            <td class="d-none d-md-table-cell">{{ imprimante.modele.fabricant.nomFabricant }}</td>
+                                            <td class="d-none d-lg-table-cell"><code class="small">{{ imprimante.numeroSerie }}</code></td>
+                                            <td class="d-none d-lg-table-cell">
+                                                {% if imprimante.adresseIp %}
+                                                    <code class="small">{{ imprimante.adresseIp }}</code>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ imprimante.suivieParService ? 'success' : 'secondary' }}">
+                                                    {{ imprimante.suivieParService ? 'Oui' : 'Non' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if dernierEtat %}
+                                                    <div class="d-flex gap-1 align-items-center flex-wrap">
+                                                        {% if dernierEtat.noirPourcent is not null %}
+                                                            <div style="min-width: 45px; max-width: 70px; flex: 1 1 auto;">
+                                                                <div class="progress" style="height: 14px;">
+                                                                    <div class="progress-bar bg-dark text-white d-flex align-items-center justify-content-center" 
+                                                                         style="width: {{ dernierEtat.noirPourcent }}%; font-size: 0.6rem;" 
+                                                                         title="Noir: {{ dernierEtat.noirPourcent }}%">
+                                                                        <strong>{{ dernierEtat.noirPourcent }}%</strong>
+                                                                    </div>
+                                                                </div>
+                                                                <small class="text-muted d-block text-center" style="font-size: 0.55rem;">N</small>
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if imprimante.modele.couleur %}
+                                                            {% if dernierEtat.cyanPourcent is not null %}
+                                                                <div style="min-width: 45px; max-width: 70px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 14px;">
+                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
+                                                                             style="width: {{ dernierEtat.cyanPourcent }}%; background-color: #00bcd4; font-size: 0.6rem;" 
+                                                                             title="Cyan: {{ dernierEtat.cyanPourcent }}%">
+                                                                            <strong>{{ dernierEtat.cyanPourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.55rem;">C</small>
+                                                                </div>
+                                                            {% endif %}
+                                                            {% if dernierEtat.magentaPourcent is not null %}
+                                                                <div style="min-width: 45px; max-width: 70px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 14px;">
+                                                                        <div class="progress-bar text-white d-flex align-items-center justify-content-center" 
+                                                                             style="width: {{ dernierEtat.magentaPourcent }}%; background-color: #e91e63; font-size: 0.6rem;" 
+                                                                             title="Magenta: {{ dernierEtat.magentaPourcent }}%">
+                                                                            <strong>{{ dernierEtat.magentaPourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.55rem;">M</small>
+                                                                </div>
+                                                            {% endif %}
+                                                            {% if dernierEtat.jaunePourcent is not null %}
+                                                                <div style="min-width: 45px; max-width: 70px; flex: 1 1 auto;">
+                                                                    <div class="progress" style="height: 14px;">
+                                                                        <div class="progress-bar text-dark d-flex align-items-center justify-content-center" 
+                                                                             style="width: {{ dernierEtat.jaunePourcent }}%; background-color: #ffeb3b; font-size: 0.6rem;" 
+                                                                             title="Jaune: {{ dernierEtat.jaunePourcent }}%">
+                                                                            <strong>{{ dernierEtat.jaunePourcent }}%</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="text-muted d-block text-center" style="font-size: 0.55rem;">J</small>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted small">Aucune donnée</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if dernierReleve %}
+                                                    <div class="small">
+                                                        <strong>{{ dernierReleve.dateReleve|date('d/m/Y') }}</strong><br>
+                                                        <span class="text-muted">
+                                                            N: {{ dernierReleve.compteurNoir ?? '-' }}<br>
+                                                            C: {{ dernierReleve.compteurCouleur ?? '-' }}
+                                                        </span>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted small">Aucun scan</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-    {{ include('site/_delete_form.html.twig') }}
+        {# Onglet Stocks #}
+        <div class="tab-pane fade" id="stocks" role="tabpanel">
+            {% if site.stockLocations is empty %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center text-muted py-5">
+                        <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
+                        <p class="mb-0">Aucun stock configuré sur ce site.</p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row" id="stocksContainer">
+                    {% for stockLocation in site.stockLocations %}
+                        <div class="col-12 col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-{{ stockLocation.type.value == 'ENTREPRISE' ? 'primary' : 'info' }} text-white d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-{{ stockLocation.type.value == 'ENTREPRISE' ? 'building' : 'person-badge' }}"></i>
+                                            {{ stockLocation.nomStock }}
+                                        </h6>
+                                        <small class="text-white-50">{{ stockLocation.type.value }}</small>
+                                    </div>
+                                    {% if not stockLocation.actif %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    {% if stockLocation.stockItems is empty %}
+                                        <p class="text-muted mb-0 text-center py-3">
+                                            <i class="bi bi-inbox"></i> Aucune pièce en stock
+                                        </p>
+                                    {% else %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Référence</th>
+                                                        <th>Type</th>
+                                                        <th class="text-end">Quantité</th>
+                                                        <th class="text-end d-none d-md-table-cell">Seuil</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for stockItem in stockLocation.stockItems %}
+                                                        {% set piece = stockItem.piece %}
+                                                        {% set isLow = stockItem.seuilAlerte is not null and stockItem.quantite <= stockItem.seuilAlerte %}
+                                                        <tr class="{{ isLow ? 'table-warning' : '' }}">
+                                                            <td>
+                                                                <strong class="small">{{ piece.reference }}</strong>
+                                                                {% if piece.couleur %}
+                                                                    <span class="badge bg-secondary ms-1">{{ piece.couleur }}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-secondary small">{{ piece.typePiece.value }}</span>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <span class="fw-bold {{ isLow ? 'text-danger' : '' }}">
+                                                                    {{ stockItem.quantite }}
+                                                                </span>
+                                                                {% if isLow %}
+                                                                    <i class="bi bi-exclamation-triangle text-warning ms-1" title="Stock bas"></i>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-end d-none d-md-table-cell">
+                                                                {% if stockItem.seuilAlerte is not null %}
+                                                                    <span class="text-muted small">{{ stockItem.seuilAlerte }}</span>
+                                                                {% else %}
+                                                                    <span class="text-muted">-</span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-white text-muted small">
+                                    <i class="bi bi-clock"></i> Mis à jour : {{ stockLocation.updatedAt|date('d/m/Y H:i') }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# Onglet Informations #}
+        <div class="tab-pane fade" id="info" role="tabpanel">
+            <div class="row">
+                <div class="col-12 col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations générales</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">ID</dt>
+                                <dd class="col-sm-8"><code>{{ site.id }}</code></dd>
+                                
+                                <dt class="col-sm-4">Nom du site</dt>
+                                <dd class="col-sm-8">{{ site.nomSite }}</dd>
+                                
+                                <dt class="col-sm-4">Client</dt>
+                                <dd class="col-sm-8">
+                                    <a href="{{ path('app_client_show', {'id': site.client.id}) }}" class="text-decoration-none">
+                                        {{ site.client.nom }}
+                                    </a>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Site principal</dt>
+                                <dd class="col-sm-8">
+                                    {% if site.principal %}
+                                        <span class="badge bg-warning text-dark">Oui</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Non</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Statut</dt>
+                                <dd class="col-sm-8">
+                                    {% if site.actif %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Statistiques</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-6">Total imprimantes</dt>
+                                <dd class="col-sm-6"><strong>{{ site.imprimantes|length }}</strong></dd>
+                                
+                                <dt class="col-sm-6">Imprimantes suivies</dt>
+                                <dd class="col-sm-6">
+                                    <strong>{{ site.imprimantes|filter(i => i.suivieParService)|length }}</strong>
+                                </dd>
+                                
+                                <dt class="col-sm-6">Stocks configurés</dt>
+                                <dd class="col-sm-6">
+                                    <strong>{{ site.stockLocations|length }}</strong>
+                                    ({{ site.stockLocations|filter(s => s.type.value == 'ENTREPRISE')|length }} entreprise, 
+                                    {{ site.stockLocations|filter(s => s.type.value == 'CLIENT')|length }} client)
+                                </dd>
+                                
+                                <dt class="col-sm-6">Imprimantes couleur</dt>
+                                <dd class="col-sm-6">
+                                    <strong>{{ site.imprimantes|filter(i => i.modele.couleur)|length }}</strong>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Scripts JavaScript pour l'interactivité #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Recherche en temps réel dans le tableau des imprimantes
+    const searchInput = document.getElementById('searchImprimantes');
+    const imprimantesTable = document.getElementById('imprimantesTable');
+    
+    if (searchInput && imprimantesTable) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const rows = imprimantesTable.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const searchText = row.getAttribute('data-search') || '';
+                const isVisible = searchText.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            
+            // Afficher un message si aucun résultat
+            let noResultsRow = imprimantesTable.querySelector('tbody tr[data-no-results]');
+            if (searchTerm && visibleCount === 0) {
+                if (!noResultsRow) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.setAttribute('data-no-results', 'true');
+                    noResultsRow.innerHTML = '<td colspan="7" class="text-center text-muted py-4">Aucune imprimante trouvée</td>';
+                    imprimantesTable.querySelector('tbody').appendChild(noResultsRow);
+                }
+                noResultsRow.style.display = '';
+            } else if (noResultsRow) {
+                noResultsRow.style.display = 'none';
+            }
+        });
+    }
+
+    // Animation des cartes statistiques au chargement
+    const statsCards = document.querySelectorAll('#statsCards .card');
+    statsCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+
+    // Lazy loading des onglets (charger le contenu seulement quand l'onglet est activé)
+    const tabButtons = document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(e) {
+            const targetId = e.target.getAttribute('data-bs-target');
+            const targetPane = document.querySelector(targetId);
+            
+            // Animation fade-in
+            if (targetPane) {
+                targetPane.style.opacity = '0';
+                setTimeout(() => {
+                    targetPane.style.transition = 'opacity 0.3s ease';
+                    targetPane.style.opacity = '1';
+                }, 50);
+            }
+        });
+    });
+
+    // Calculer et afficher le nombre d'alertes via AJAX
+    function calculateAlertes() {
+        const alertesCount = document.getElementById('alertesCount');
+        if (!alertesCount) return;
+        
+        const siteId = {{ site.id }};
+        fetch(`{{ path('app_site_alertes', {'id': site.id}) }}`)
+            .then(response => response.json())
+            .then(data => {
+                alertesCount.textContent = data.count || '0';
+                if (data.count > 0) {
+                    alertesCount.parentElement.parentElement.classList.add('border-warning');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des alertes:', error);
+                alertesCount.textContent = '-';
+            });
+    }
+    
+    calculateAlertes();
+
+    // Responsive: Masquer certaines colonnes sur mobile
+    function handleResponsive() {
+        const isMobile = window.innerWidth < 768;
+        const table = document.getElementById('imprimantesTable');
+        if (table) {
+            // Les colonnes avec d-none d-md-table-cell sont déjà gérées par Bootstrap
+            // On peut ajouter des ajustements supplémentaires si nécessaire
+        }
+    }
+    
+    window.addEventListener('resize', handleResponsive);
+    handleResponsive();
+});
+</script>
+
+<style>
+/* Animations et transitions */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Amélioration de la lisibilité sur mobile */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .card-header h1, .card-header h3 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Animation pour les onglets */
+.tab-pane {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Amélioration des badges de statut */
+.badge {
+    font-weight: 500;
+}
+
+/* Style pour les lignes de recherche vide */
+tr[data-no-results] {
+    background-color: #f8f9fa;
+}
+</style>
 {% endblock %}

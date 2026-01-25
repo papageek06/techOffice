@@ -1,0 +1,153 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pièce - {{ piece.reference }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-puzzle"></i> {{ piece.reference }}
+            </h1>
+            <p class="text-muted mb-0">{{ piece.designation }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_piece_edit', {'id': piece.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_piece_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Référence</dt>
+                        <dd class="col-sm-8"><strong>{{ piece.reference }}</strong></dd>
+
+                        <dt class="col-sm-4">Désignation</dt>
+                        <dd class="col-sm-8">{{ piece.designation }}</dd>
+
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-secondary">{{ piece.typePiece.value }}</span>
+                        </dd>
+
+                        <dt class="col-sm-4">Couleur</dt>
+                        <dd class="col-sm-8">
+                            {% if piece.couleur %}
+                                <span class="badge bg-dark">{{ piece.couleur }}</span>
+                            {% else %}
+                                <span class="text-muted">Non applicable</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Statut</dt>
+                        <dd class="col-sm-8">
+                            {% if piece.actif %}
+                                <span class="badge bg-success">Actif</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactif</span>
+                            {% endif %}
+                        </dd>
+
+                        {% if piece.notes %}
+                            <dt class="col-sm-4">Notes</dt>
+                            <dd class="col-sm-8">{{ piece.notes|nl2br }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-4">Créé le</dt>
+                        <dd class="col-sm-8">{{ piece.createdAt|date('d/m/Y H:i') }}</dd>
+
+                        <dt class="col-sm-4">Modifié le</dt>
+                        <dd class="col-sm-8">{{ piece.updatedAt|date('d/m/Y H:i') }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Compatibilités avec les modèles</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if piece.pieceModeles is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune compatibilité définie</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Modèle</th>
+                                        <th>Rôle</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pieceModele in piece.pieceModeles %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ pieceModele.modele.fabricant.nomFabricant }} {{ pieceModele.modele.referenceModele }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ pieceModele.role.value }}</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_piece_modele_show', {'id': pieceModele.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-box-seam"></i> Stocks</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Emplacements:</strong> {{ piece.stockItems|length }}
+                    </p>
+                    <a href="{{ path('app_stock_item_index') }}" class="btn btn-sm btn-outline-primary w-100">
+                        Voir les stocks
+                    </a>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_piece_edit', {'id': piece.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_piece_modele_new') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-link-45deg"></i> Ajouter une compatibilité
+                        </a>
+                        {{ include('piece/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

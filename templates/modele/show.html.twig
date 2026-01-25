@@ -1,30 +1,152 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modele{% endblock %}
+{% block title %}Modèle - {{ modele.fabricant.nomFabricant }} {{ modele.referenceModele }}{% endblock %}
 
 {% block body %}
-    <h1>Modele</h1>
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-printer"></i> {{ modele.fabricant.nomFabricant }} {{ modele.referenceModele }}
+            </h1>
+            <p class="text-muted mb-0">
+                <span class="badge bg-{{ modele.couleur ? 'info' : 'secondary' }}">
+                    {{ modele.couleur ? 'Couleur' : 'Noir et blanc' }}
+                </span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_modele_edit', {'id': modele.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_modele_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ modele.id }}</td>
-            </tr>
-            <tr>
-                <th>ReferenceModele</th>
-                <td>{{ modele.referenceModele }}</td>
-            </tr>
-            <tr>
-                <th>Couleur</th>
-                <td>{{ modele.couleur ? 'Yes' : 'No' }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Fabricant</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_fabricant_show', {'id': modele.fabricant.id}) }}" class="text-decoration-none">
+                                {{ modele.fabricant.nomFabricant }}
+                            </a>
+                        </dd>
 
-    <a href="{{ path('app_modele_index') }}">back to list</a>
+                        <dt class="col-sm-4">Référence</dt>
+                        <dd class="col-sm-8"><strong>{{ modele.referenceModele }}</strong></dd>
 
-    <a href="{{ path('app_modele_edit', {'id': modele.id}) }}">edit</a>
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{{ modele.couleur ? 'info' : 'secondary' }}">
+                                {{ modele.couleur ? 'Imprimante couleur' : 'Imprimante noir et blanc' }}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
 
-    {{ include('modele/_delete_form.html.twig') }}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-printer-fill"></i> Imprimantes gérées
+                        <span class="badge bg-primary ms-2">{{ imprimantesGerees|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if imprimantesGerees is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune imprimante gérée pour ce modèle</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Numéro de série</th>
+                                        <th>Site</th>
+                                        <th>Client</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for imprimante in imprimantesGerees %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ imprimante.numeroSerie }}</strong>
+                                                {% if imprimante.dualScan %}
+                                                    <span class="badge bg-info ms-1">A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ path('app_site_show', {'id': imprimante.site.id}) }}" class="text-decoration-none">
+                                                    {{ imprimante.site.nomSite }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ imprimante.site.client.nom }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ imprimante.statut.value == 'actif' ? 'success' : (imprimante.statut.value == 'hs' ? 'danger' : 'warning') }}">
+                                                    {{ imprimante.statut.value|upper }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Pièces compatibles</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Pièces:</strong> {{ modele.pieceModeles|length }}
+                    </p>
+                    <a href="{{ path('app_piece_modele_index') }}" class="btn btn-sm btn-outline-primary w-100">
+                        Voir les compatibilités
+                    </a>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_modele_edit', {'id': modele.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_piece_modele_new') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-link-45deg"></i> Ajouter une compatibilité
+                        </a>
+                        {{ include('modele/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

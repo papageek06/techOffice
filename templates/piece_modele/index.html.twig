@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compatibilités pièce/modèle{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1><i class="bi bi-link-45deg"></i> Compatibilités pièce/modèle</h1>
+        <a href="{{ path('app_piece_modele_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouvelle compatibilité
+        </a>
+    </div>
+
+    {% if piece_modeles is empty %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Aucune compatibilité définie.
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pièce</th>
+                            <th>Modèle</th>
+                            <th>Rôle</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for piece_modele in piece_modeles %}
+                            <tr>
+                                <td>
+                                    <a href="{{ path('app_piece_show', {'id': piece_modele.piece.id}) }}" class="text-decoration-none">
+                                        <strong>{{ piece_modele.piece.reference }}</strong>
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ piece_modele.piece.designation }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ piece_modele.modele.fabricant.nomFabricant }} {{ piece_modele.modele.referenceModele }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ piece_modele.role.value }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ path('app_piece_modele_show', {'id': piece_modele.id}) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_piece_modele_edit', {'id': piece_modele.id}) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

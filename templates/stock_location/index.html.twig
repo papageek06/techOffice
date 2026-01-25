@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Emplacements de stock{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1><i class="bi bi-geo-alt"></i> Emplacements de stock</h1>
+        <a href="{{ path('app_stock_location_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouvel emplacement
+        </a>
+    </div>
+
+    {% if stock_locations is empty %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Aucun emplacement de stock configuré.
+        </div>
+    {% else %}
+        <div class="row g-3">
+            {% for stock_location in stock_locations %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-{{ stock_location.type.value == 'ENTREPRISE' ? 'primary' : 'info' }} text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-{{ stock_location.type.value == 'ENTREPRISE' ? 'building' : 'person-badge' }}"></i>
+                                {{ stock_location.nomStock }}
+                            </h6>
+                            <small class="text-white-50">{{ stock_location.type.value }}</small>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                <strong>Site:</strong> 
+                                <a href="{{ path('app_site_show', {'id': stock_location.site.id}) }}" class="text-decoration-none">
+                                    {{ stock_location.site.nomSite }}
+                                </a>
+                            </p>
+                            <p class="mb-2">
+                                <strong>Client:</strong> {{ stock_location.site.client.nom }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Pièces en stock:</strong> {{ stock_location.stockItems|length }}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-white d-flex gap-2">
+                            <a href="{{ path('app_stock_location_show', {'id': stock_location.id}) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Voir
+                            </a>
+                            <a href="{{ path('app_stock_location_edit', {'id': stock_location.id}) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i> Modifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

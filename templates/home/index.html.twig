@@ -1,92 +1,304 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Accueil - TechOffice{% endblock %}
+{% block title %}Dashboard - TechOffice{% endblock %}
 
 {% block body %}
-<div class="container">
-    <div class="row">
+<div class="container-fluid px-3 px-md-4">
+    {# En-tête du dashboard #}
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
-                <h1 class="display-4">Bienvenue sur TechOffice</h1>
-                <p class="lead">Système de gestion des imprimantes et interventions</p>
-                <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
-                <p>Gérez vos clients, sites, imprimantes, interventions et bien plus encore.</p>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Vue d'ensemble de votre activité</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ path('app_import') }}" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Import CSV
+                    </a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_user_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-gear"></i> Administration
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
+    {# Cartes statistiques principales #}
+    <div class="row g-3 mb-4" id="statsCards">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card" data-stat="clients">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-building fs-1 text-primary"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.clients }}</h3>
+                    <small class="text-muted">Client(s)</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ path('app_client_index') }}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-arrow-right"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card" data-stat="sites">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-geo-alt fs-1 text-info"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.sites }}</h3>
+                    <small class="text-muted">Site(s)</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ path('app_site_index') }}" class="btn btn-sm btn-outline-info w-100">
+                        <i class="bi bi-arrow-right"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card" data-stat="imprimantes">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-printer fs-1 text-success"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.imprimantes }}</h3>
+                    <small class="text-muted">Imprimante(s)</small>
+                    <div class="mt-1">
+                        <span class="badge bg-success">{{ stats.imprimantes_suivies }} suivies</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ path('app_imprimante_index') }}" class="btn btn-sm btn-outline-success w-100">
+                        <i class="bi bi-arrow-right"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card" data-stat="interventions">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-tools fs-1 text-warning"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.interventions_ouvertes }}</h3>
+                    <small class="text-muted">Intervention(s) ouverte(s)</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ path('app_intervention_index') }}" class="btn btn-sm btn-outline-warning w-100">
+                        <i class="bi bi-arrow-right"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Contenu principal en 2 colonnes #}
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-building"></i> Clients & Sites
+        {# Colonne gauche - Activité récente #}
+        <div class="col-12 col-lg-8">
+            {# Dernières interventions #}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Dernières interventions
                     </h5>
-                    <p class="card-text">Gérez vos clients et leurs sites d'installation.</p>
-                    <a href="{{ path('app_client_index') }}" class="btn btn-primary">Voir les clients</a>
+                    <a href="{{ path('app_intervention_index') }}" class="btn btn-sm btn-outline-primary">
+                        Voir tout <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if dernieresInterventions is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune intervention récente</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 20%;">Date</th>
+                                        <th style="width: 30%;">Imprimante</th>
+                                        <th style="width: 25%;">Type</th>
+                                        <th style="width: 15%;">Statut</th>
+                                        <th style="width: 10%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for intervention in dernieresInterventions %}
+                                        <tr>
+                                            <td>
+                                                <small>{{ intervention.dateCreation|date('d/m/Y H:i') }}</small>
+                                            </td>
+                                            <td>
+                                                <a href="{{ path('app_imprimante_show', {'id': intervention.imprimante.id}) }}" class="text-decoration-none">
+                                                    {{ intervention.imprimante.modele.referenceModele }}
+                                                </a>
+                                                <br>
+                                                <small class="text-muted">{{ intervention.imprimante.site.nomSite }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ intervention.typeIntervention.value }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ intervention.statut.value == 'OUVERTE' ? 'warning' : (intervention.statut.value == 'FERMEE' ? 'success' : 'secondary') }}">
+                                                    {{ intervention.statut.value }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_intervention_show', {'id': intervention.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
+
+            {# Alertes stocks #}
+            {% if sitesAvecAlertes is not empty %}
+                <div class="card border-0 shadow-sm border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> Alertes de stock
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for site in sitesAvecAlertes %}
+                                <a href="{{ path('app_site_show', {'id': site.id}) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ site.nomSite }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ site.client.nom }}</small>
+                                        </div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-printer"></i> Imprimantes
+        {# Colonne droite - Accès rapide #}
+        <div class="col-12 col-lg-4">
+            {# Accès rapide #}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge"></i> Accès rapide
                     </h5>
-                    <p class="card-text">Suivez vos imprimantes et leurs états.</p>
-                    <a href="{{ path('app_imprimante_index') }}" class="btn btn-primary">Voir les imprimantes</a>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_site_index') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-building"></i> Sites
+                        </a>
+                        <a href="{{ path('app_imprimante_index') }}" class="btn btn-outline-success text-start">
+                            <i class="bi bi-printer"></i> Imprimantes
+                        </a>
+                        <a href="{{ path('app_stock_location_index') }}" class="btn btn-outline-info text-start">
+                            <i class="bi bi-box-seam"></i> Stocks
+                        </a>
+                        <a href="{{ path('app_piece_index') }}" class="btn btn-outline-secondary text-start">
+                            <i class="bi bi-puzzle"></i> Pièces
+                        </a>
+                        <a href="{{ path('app_intervention_new') }}" class="btn btn-outline-warning text-start">
+                            <i class="bi bi-plus-circle"></i> Nouvelle intervention
+                        </a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <hr>
+                            <a href="{{ path('app_user_index') }}" class="btn btn-outline-dark text-start">
+                                <i class="bi bi-people"></i> Utilisateurs
+                            </a>
+                            <a href="{{ path('app_piece_modele_index') }}" class="btn btn-outline-dark text-start">
+                                <i class="bi bi-link-45deg"></i> Compatibilités
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-tools"></i> Interventions
+            {# Statistiques stocks #}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Stocks
                     </h5>
-                    <p class="card-text">Gérez les interventions et maintenances.</p>
-                    <a href="{{ path('app_intervention_index') }}" class="btn btn-primary">Voir les interventions</a>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-people"></i> Utilisateurs
-                    </h5>
-                    <p class="card-text">Gérez les utilisateurs du système.</p>
-                    <a href="{{ path('app_user_index') }}" class="btn btn-primary">Voir les utilisateurs</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-calendar-check"></i> Demandes Congé
-                    </h5>
-                    <p class="card-text">Gérez les demandes de congé.</p>
-                    <a href="{{ path('app_demande_conge_index') }}" class="btn btn-primary">Voir les demandes</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-graph-up"></i> Relevés Compteur
-                    </h5>
-                    <p class="card-text">Suivez les relevés de compteurs.</p>
-                    <a href="{{ path('app_releve_compteur_index') }}" class="btn btn-primary">Voir les relevés</a>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Emplacements</span>
+                            <strong>{{ stats.stocks }}</strong>
+                        </div>
+                    </div>
+                    <a href="{{ path('app_stock_location_index') }}" class="btn btn-sm btn-outline-primary w-100">
+                        Gérer les stocks
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation des cartes statistiques
+    const statsCards = document.querySelectorAll('.stats-card');
+    statsCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+
+    // Effet hover sur les cartes
+    statsCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+
+<style>
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+</style>
 {% endblock %}

@@ -1,7 +1,7 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ path('app_home') }}">
-            <strong>TechOffice</strong>
+        <a class="navbar-brand fw-bold" href="{{ path('app_home') }}">
+            <i class="bi bi-speedometer2"></i> TechOffice
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -9,134 +9,135 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ path('app_home') }}">Accueil</a>
+                    <a class="nav-link {{ app.request.attributes.get('_route') == 'app_home' ? 'active' : '' }}" href="{{ path('app_home') }}">
+                        <i class="bi bi-house-door"></i> <span class="d-none d-md-inline">Accueil</span>
+                    </a>
                 </li>
                 
                 {% if app.user %}
+                    {# Menu principal - Parc #}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_site' or app.request.attributes.get('_route') starts with 'app_imprimante' ? 'active' : '' }}" href="#" id="parcDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-building"></i> <span class="d-none d-md-inline">Parc</span>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="parcDropdown">
+                            <li><h6 class="dropdown-header">Sites</h6></li>
+                            <li><a class="dropdown-item" href="{{ path('app_site_index') }}">
+                                <i class="bi bi-list-ul"></i> Liste des sites
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_site_new') }}">
+                                <i class="bi bi-plus-circle"></i> Nouveau site
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Imprimantes</h6></li>
+                            <li><a class="dropdown-item" href="{{ path('app_imprimante_index') }}">
+                                <i class="bi bi-list-ul"></i> Liste des imprimantes
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_imprimante_new') }}">
+                                <i class="bi bi-plus-circle"></i> Nouvelle imprimante
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    {# Menu Stock #}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_stock' or app.request.attributes.get('_route') starts with 'app_piece' ? 'active' : '' }}" href="#" id="stockDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-box-seam"></i> <span class="d-none d-md-inline">Stock</span>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="stockDropdown">
+                            <li><a class="dropdown-item" href="{{ path('app_stock_location_index') }}">
+                                <i class="bi bi-geo-alt"></i> Emplacements de stock
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_piece_index') }}">
+                                <i class="bi bi-puzzle"></i> Catalogue des pièces
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_stock_item_index') }}">
+                                <i class="bi bi-box"></i> Quantités en stock
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ path('app_piece_modele_index') }}">
+                                <i class="bi bi-link-45deg"></i> Compatibilités
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    {# Menu Interventions #}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ path('app_import') }}">
-                            <i class="bi bi-upload"></i> Import CSV
+                        <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_intervention' ? 'active' : '' }}" href="{{ path('app_intervention_index') }}">
+                            <i class="bi bi-tools"></i> <span class="d-none d-md-inline">Interventions</span>
                         </a>
                     </li>
-                    
-                    <!-- Menu Clients -->
+
+                    {# Menu Clients #}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="clientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Clients
+                        <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_client' ? 'active' : '' }}" href="#" id="clientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-people"></i> <span class="d-none d-md-inline">Clients</span>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="clientsDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_client_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_client_new') }}">Nouveau</a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_client_index') }}">
+                                <i class="bi bi-list-ul"></i> Liste
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_client_new') }}">
+                                <i class="bi bi-plus-circle"></i> Nouveau
+                            </a></li>
                         </ul>
                     </li>
 
-                    <!-- Menu Sites -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="sitesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Sites
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="sitesDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_site_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_site_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
+                    {# Menu Référentiel (admin) #}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_fabricant' or app.request.attributes.get('_route') starts with 'app_modele' ? 'active' : '' }}" href="#" id="referentielDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-database"></i> <span class="d-none d-md-inline">Référentiel</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="referentielDropdown">
+                                <li><h6 class="dropdown-header">Fabricants</h6></li>
+                                <li><a class="dropdown-item" href="{{ path('app_fabricant_index') }}">Liste</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_fabricant_new') }}">Nouveau</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Modèles</h6></li>
+                                <li><a class="dropdown-item" href="{{ path('app_modele_index') }}">Liste</a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_modele_new') }}">Nouveau</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
 
-                    <!-- Menu Imprimantes -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="imprimantesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Imprimantes
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="imprimantesDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_imprimante_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_imprimante_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
+                    {# Menu Administration (admin) #}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_user' or app.request.attributes.get('_route') starts with 'app_demande_conge' ? 'active' : '' }}" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gear"></i> <span class="d-none d-md-inline">Admin</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ path('app_user_index') }}">
+                                    <i class="bi bi-people"></i> Utilisateurs
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_demande_conge_index') }}">
+                                    <i class="bi bi-calendar-check"></i> Demandes de congé
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
 
-                    <!-- Menu Fabricants -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="fabricantsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Fabricants
+                    {# Import CSV #}
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.attributes.get('_route') == 'app_import' ? 'active' : '' }}" href="{{ path('app_import') }}">
+                            <i class="bi bi-upload"></i> <span class="d-none d-md-inline">Import CSV</span>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="fabricantsDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_fabricant_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_fabricant_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu Modèles -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="modelesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Modèles
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="modelesDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_modele_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_modele_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu Interventions -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="interventionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Interventions
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="interventionsDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_intervention_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_intervention_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu Relevés Compteur -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="relevesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Relevés Compteur
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="relevesDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_releve_compteur_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_releve_compteur_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu États Consommables -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="etatsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            États Consommables
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="etatsDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_etat_consommable_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_etat_consommable_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu Demandes Congé -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="congesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Demandes Congé
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="congesDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_demande_conge_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_demande_conge_new') }}">Nouveau</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Menu Utilisateurs -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Utilisateurs
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="usersDropdown">
-                            <li><a class="dropdown-item" href="{{ path('app_user_index') }}">Liste</a></li>
-                            <li><a class="dropdown-item" href="{{ path('app_user_new') }}">Nouveau</a></li>
-                        </ul>
                     </li>
                 {% endif %}
             </ul>
+
+            {# Menu utilisateur #}
             <ul class="navbar-nav">
                 {% if app.user %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle"></i> {{ app.user.nom ?? app.user.email }}
+                            <i class="bi bi-person-circle"></i> 
+                            <span class="d-none d-md-inline">{{ app.user.nom ?? app.user.email }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">{{ app.user.email }}</h6></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ path('app_logout') }}">
                                 <i class="bi bi-box-arrow-right"></i> Déconnexion
                             </a></li>
@@ -145,7 +146,7 @@
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ path('app_login') }}">
-                            <i class="bi bi-box-arrow-in-right"></i> Connexion
+                            <i class="bi bi-box-arrow-in-right"></i> <span class="d-none d-md-inline">Connexion</span>
                         </a>
                     </li>
                 {% endif %}
@@ -153,3 +154,22 @@
         </div>
     </div>
 </nav>
+
+<script>
+// Fermeture automatique du menu mobile après clic
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('#navbarNav .nav-link:not(.dropdown-toggle)');
+    const navbarCollapse = document.querySelector('#navbarNav');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 992) { // Bootstrap lg breakpoint
+                const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                if (bsCollapse) {
+                    bsCollapse.hide();
+                }
+            }
+        });
+    });
+});
+</script>

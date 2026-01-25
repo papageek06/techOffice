@@ -46,10 +46,22 @@ final class ModeleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_modele_show', methods: ['GET'])]
-    public function show(Modele $modele): Response
+    public function show(Modele $modele, EntityManagerInterface $entityManager): Response
     {
+        // Filtrer les imprimantes pour ne garder que celles suivies par le service
+        $imprimantesGerees = $entityManager
+            ->getRepository(\App\Entity\Imprimante::class)
+            ->createQueryBuilder('i')
+            ->where('i.modele = :modele')
+            ->andWhere('i.suivieParService = :suivie')
+            ->setParameter('modele', $modele)
+            ->setParameter('suivie', true)
+            ->getQuery()
+            ->getResult();
+
         return $this->render('modele/show.html.twig', [
             'modele' => $modele,
+            'imprimantesGerees' => $imprimantesGerees,
         ]);
     }
 

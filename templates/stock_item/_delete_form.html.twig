@@ -1,0 +1,6 @@
+<form method="post" action="{{ path('app_stock_item_delete', {'id': stock_item.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette entrée de stock ?');" class="d-inline">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ stock_item.id) }}">
+    <button type="submit" class="btn btn-outline-danger w-100">
+        <i class="bi bi-trash"></i> Supprimer
+    </button>
+</form>

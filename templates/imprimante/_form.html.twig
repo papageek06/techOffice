@@ -1,4 +1,52 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': ''}}) }}
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            {{ form_row(form.site) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.modele) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.numeroSerie) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.dateInstallation) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.adresseIp) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.emplacement) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.statut) }}
+        </div>
+
+        <div class="col-12 col-md-6">
+            {{ form_row(form.suivieParService) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.dualScan) }}
+        </div>
+
+        <div class="col-12">
+            {{ form_row(form.notes) }}
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {{ button_label|default('Enregistrer') }}
+        </button>
+        <a href="{{ path('app_imprimante_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Annuler
+        </a>
+    </div>
 {{ form_end(form) }}

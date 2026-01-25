@@ -30,9 +30,14 @@ class Site
     #[ORM\OneToMany(mappedBy: 'site', targetEntity: Imprimante::class, orphanRemoval: true)]
     private Collection $imprimantes;
 
+    /** @var Collection<int, StockLocation> */
+    #[ORM\OneToMany(mappedBy: 'site', targetEntity: StockLocation::class, orphanRemoval: true)]
+    private Collection $stockLocations;
+
     public function __construct()
     {
         $this->imprimantes = new ArrayCollection();
+        $this->stockLocations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -104,6 +109,29 @@ class Site
     public function removeImprimante(Imprimante $imprimante): self
     {
         $this->imprimantes->removeElement($imprimante);
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StockLocation>
+     */
+    public function getStockLocations(): Collection
+    {
+        return $this->stockLocations;
+    }
+
+    public function addStockLocation(StockLocation $stockLocation): self
+    {
+        if (!$this->stockLocations->contains($stockLocation)) {
+            $this->stockLocations->add($stockLocation);
+            $stockLocation->setSite($this);
+        }
+        return $this;
+    }
+
+    public function removeStockLocation(StockLocation $stockLocation): self
+    {
+        $this->stockLocations->removeElement($stockLocation);
         return $this;
     }
 }

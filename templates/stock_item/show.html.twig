@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Entrée de stock - {{ stock_item.piece.reference }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-box"></i> {{ stock_item.piece.reference }}
+            </h1>
+            <p class="text-muted mb-0">{{ stock_item.piece.designation }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_stock_item_edit', {'id': stock_item.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_stock_item_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Emplacement</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_stock_location_show', {'id': stock_item.stockLocation.id}) }}" class="text-decoration-none">
+                                {{ stock_item.stockLocation.nomStock }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ stock_item.stockLocation.site.nomSite }}</small>
+                        </dd>
+
+                        <dt class="col-sm-4">Pièce</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_piece_show', {'id': stock_item.piece.id}) }}" class="text-decoration-none">
+                                <strong>{{ stock_item.piece.reference }}</strong>
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ stock_item.piece.designation }}</small>
+                        </dd>
+
+                        <dt class="col-sm-4">Quantité</dt>
+                        <dd class="col-sm-8">
+                            <strong class="fs-4">{{ stock_item.quantite }}</strong>
+                        </dd>
+
+                        <dt class="col-sm-4">Seuil d'alerte</dt>
+                        <dd class="col-sm-8">
+                            {% if stock_item.seuilAlerte is not null %}
+                                {{ stock_item.seuilAlerte }}
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Statut</dt>
+                        <dd class="col-sm-8">
+                            {% set isLow = stock_item.seuilAlerte is not null and stock_item.quantite <= stock_item.seuilAlerte %}
+                            {% if isLow %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> Alerte - Stock bas
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">Stock suffisant</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Dernière mise à jour</dt>
+                        <dd class="col-sm-8">{{ stock_item.updatedAt|date('d/m/Y H:i') }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_stock_item_edit', {'id': stock_item.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_stock_location_show', {'id': stock_item.stockLocation.id}) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-geo-alt"></i> Voir l'emplacement
+                        </a>
+                        <a href="{{ path('app_piece_show', {'id': stock_item.piece.id}) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-puzzle"></i> Voir la pièce
+                        </a>
+                        {{ include('stock_item/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
