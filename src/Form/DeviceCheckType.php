@@ -43,7 +43,7 @@ class DeviceCheckType extends AbstractType
                         'message' => 'Le code doit contenir uniquement des chiffres',
                     ]),
                 ],
-                'help' => 'Entrez le code à 6 chiffres reçu par SMS',
+                'help' => 'Entrez le code à 6 chiffres reçu par SMS ou email',
             ])
             ->add('trustDuration', ChoiceType::class, [
                 'label' => 'Durée de confiance',

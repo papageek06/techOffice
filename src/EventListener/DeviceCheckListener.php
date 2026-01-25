@@ -8,6 +8,7 @@ use App\Entity\UserDevice;
 use App\Repository\LoginChallengeRepository;
 use App\Repository\UserDeviceRepository;
 use App\Service\DeviceIdManager;
+use App\Service\EmailSenderInterface;
 use App\Service\OtpGenerator;
 use App\Service\SmsSenderInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +32,7 @@ class DeviceCheckListener
         private LoginChallengeRepository $loginChallengeRepository,
         private OtpGenerator $otpGenerator,
         private SmsSenderInterface $smsSender,
+        private EmailSenderInterface $emailSender,
         private EntityManagerInterface $entityManager,
         private RequestStack $requestStack,
         private UrlGeneratorInterface $urlGenerator
@@ -76,10 +78,10 @@ class DeviceCheckListener
         // Appareil non reconnu : créer un challenge OTP
         $this->createOtpChallenge($user, $deviceId, $request);
 
-        // Rediriger vers la page de validation
-        $event->setResponse(
-            new RedirectResponse($this->urlGenerator->generate('app_device_check'))
-        );
+        // Rediriger vers la page de validation et définir le cookie device_id
+        $redirectResponse = new RedirectResponse($this->urlGenerator->generate('app_device_check'));
+        $this->deviceIdManager->setDeviceCookie($redirectResponse, $deviceId);
+        $event->setResponse($redirectResponse);
     }
 
     /**
@@ -103,19 +105,26 @@ class DeviceCheckListener
         $this->entityManager->persist($challenge);
         $this->entityManager->flush();
 
-        // Envoyer le SMS (mock en développement)
-        // TODO: Récupérer le numéro de téléphone depuis l'entité User
-        // Pour l'instant, on utilise l'email comme identifiant
-        // Vous devrez ajouter un champ phoneNumber à l'entité User si nécessaire
+        // Envoyer le code OTP par SMS et/ou email
         $phoneNumber = $this->getUserPhoneNumber($user);
+        $email = $user->getEmail();
+        $userName = $user->getNom() ?? $user->getEmail();
         
+        // Envoyer par SMS si numéro disponible
         if ($phoneNumber) {
             $this->smsSender->sendOtp($phoneNumber, $otpCode);
-        } else {
-            // En développement, on peut logger le code pour faciliter les tests
+        }
+        
+        // Toujours envoyer par email en complément (ou en remplacement si pas de SMS)
+        if ($email) {
+            $this->emailSender->sendOtp($email, $otpCode, $userName);
+        }
+        
+        // En développement, logger aussi le code pour faciliter les tests
+        if (!$phoneNumber && !$email) {
             error_log(sprintf(
-                '[DEV] Code OTP pour %s (device: %s): %s',
-                $user->getEmail(),
+                '[DEV] Code OTP pour utilisateur ID %d (device: %s): %s',
+                $user->getId(),
                 $deviceId,
                 $otpCode
             ));

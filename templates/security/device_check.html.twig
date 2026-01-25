@@ -16,8 +16,19 @@
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
                         <strong>Nouvel appareil détecté</strong><br>
-                        Un code de vérification a été envoyé par SMS à votre numéro de téléphone.
-                        Veuillez l'entrer ci-dessous pour finaliser votre connexion.
+                        {% if app.user.phoneNumber %}
+                            Un code de vérification a été envoyé par SMS à votre numéro de téléphone.
+                        {% endif %}
+                        {% if app.user.email %}
+                            {% if app.user.phoneNumber %}<br>{% endif %}
+                            Un code de vérification a également été envoyé par email à <strong>{{ app.user.email }}</strong>.
+                        {% endif %}
+                        {% if not app.user.phoneNumber and not app.user.email %}
+                            <strong class="text-warning">Mode développement :</strong><br>
+                            Le code OTP a été loggé dans les logs de l'application (var/log/dev.log).<br>
+                            Recherchez la ligne contenant <code>[MOCK SMS]</code>, <code>[MOCK EMAIL]</code> ou <code>[DEV] Code OTP</code>.
+                        {% endif %}
+                        <br><br>Veuillez entrer le code ci-dessous pour finaliser votre connexion.
                     </div>
 
                     {% for flash_error in app.flashes('error') %}
@@ -56,16 +67,33 @@
                             }) }}
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Durée de confiance</label>
-                            {{ form_row(form.trustDuration, {
-                                'attr': {
-                                    'class': 'form-check-input'
-                                }
-                            }) }}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-3">Durée de confiance</label>
+                            <div class="d-flex flex-column gap-2" style="position: relative; z-index: 10;">
+                                {% for child in form.trustDuration %}
+                                    <div class="form-check" style="position: relative; z-index: 10;">
+                                        {{ form_widget(child, {
+                                            'attr': {
+                                                'class': 'form-check-input',
+                                                'style': 'position: relative; z-index: 10; cursor: pointer;'
+                                            }
+                                        }) }}
+                                        {{ form_label(child, null, {
+                                            'label_attr': {
+                                                'class': 'form-check-label',
+                                                'style': 'cursor: pointer; position: relative; z-index: 10;'
+                                            }
+                                        }) }}
+                                    </div>
+                                {% endfor %}
+                                {{ form_errors(form.trustDuration) }}
+                                {% if form.trustDuration.help %}
+                                    <div class="form-text">{{ form.trustDuration.help }}</div>
+                                {% endif %}
+                            </div>
                         </div>
 
-                        <div class="d-grid gap-2">
+                        <div class="d-grid gap-2 mt-4" style="position: relative; z-index: 1;">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-check-circle"></i> Valider et continuer
                             </button>

@@ -26,3 +26,8 @@ services:
     # En production, remplacer MockSmsSender par une implémentation réelle (Twilio, Nexmo, etc.)
     App\Service\SmsSenderInterface:
         class: App\Service\MockSmsSender
+    
+    # Configuration du service Email
+    # En production, remplacer MockEmailSender par une implémentation réelle (Symfony Mailer, etc.)
+    App\Service\EmailSenderInterface:
+        class: App\Service\MockEmailSender
