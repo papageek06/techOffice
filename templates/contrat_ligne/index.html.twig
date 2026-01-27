@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Lignes de contrat{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1><i class="bi bi-list-ul"></i> Lignes de contrat</h1>
+        <a href="{{ path('app_contrat_ligne_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouvelle ligne
+        </a>
+    </div>
+
+    {% if contrat_lignes is empty %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Aucune ligne de contrat enregistrée.
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libellé</th>
+                            <th>Contrat</th>
+                            <th>Site</th>
+                            <th>Périodicité</th>
+                            <th>Prochaine facturation</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ligne in contrat_lignes %}
+                            <tr>
+                                <td><strong>{{ ligne.libelle }}</strong></td>
+                                <td>
+                                    <a href="{{ path('app_contrat_show', {'id': ligne.contrat.id}) }}" class="text-decoration-none">
+                                        {{ ligne.contrat.reference }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{{ path('app_site_show', {'id': ligne.site.id}) }}" class="text-decoration-none">
+                                        {{ ligne.site.nomSite }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ ligne.periodicite.value }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ ligne.prochaineFacturation|date('d/m/Y') }}</small>
+                                </td>
+                                <td>
+                                    {% if ligne.actif %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ path('app_contrat_ligne_show', {'id': ligne.id}) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_contrat_ligne_edit', {'id': ligne.id}) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

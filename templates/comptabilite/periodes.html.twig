@@ -1,0 +1,141 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Périodes de facturation - Comptabilité{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-calendar-range"></i> Périodes de facturation
+            </h1>
+            <p class="text-muted mb-0">Gestion des périodes de facturation</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_comptabilite_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    {# Filtres #}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="filterStatut">
+                        <option value="">Tous</option>
+                        <option value="BROUILLON">Brouillon</option>
+                        <option value="VALIDE">Validé</option>
+                        <option value="FACTURE">Facturé</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Contrat, site...">
+                </div>
+                <div class="col-12 col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-secondary w-100" id="clearFilters">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Tableau des périodes #}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="periodesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Période</th>
+                        <th>Contrat</th>
+                        <th>Site</th>
+                        <th>Pages</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in periodesAvecMontants %}
+                        <tr data-statut="{{ item.periode.statut.value }}" data-search="{{ (item.periode.contratLigne.contrat.reference ~ ' ' ~ item.periode.contratLigne.site.nomSite)|lower }}">
+                            <td>
+                                <small>
+                                    {{ item.periode.dateDebut|date('d/m/Y') }}<br>
+                                    <strong>{{ item.periode.dateFin|date('d/m/Y') }}</strong>
+                                </small>
+                            </td>
+                            <td>
+                                <strong>{{ item.periode.contratLigne.contrat.reference }}</strong><br>
+                                <small class="text-muted">{{ item.periode.contratLigne.contrat.client.nom }}</small>
+                            </td>
+                            <td>
+                                {{ item.periode.contratLigne.site.nomSite }}
+                            </td>
+                            <td>
+                                <span class="badge bg-dark">{{ item.pagesNoir }} N</span>
+                                {% if item.pagesCouleur > 0 %}
+                                    <span class="badge bg-info">{{ item.pagesCouleur }} C</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="text-success">{{ item.montant|number_format(2, ',', ' ') }} €</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ item.periode.statut.value == 'FACTURE' ? 'success' : (item.periode.statut.value == 'VALIDE' ? 'info' : 'warning') }}">
+                                    {{ item.periode.statut.value }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ path('app_comptabilite_periode_show', {'id': item.periode.id}) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Voir
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterStatut = document.getElementById('filterStatut');
+    const searchInput = document.getElementById('searchInput');
+    const clearFilters = document.getElementById('clearFilters');
+    const rows = document.querySelectorAll('#periodesTable tbody tr');
+
+    function filterTable() {
+        const statutValue = filterStatut.value.toLowerCase();
+        const searchValue = searchInput.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+            const statut = row.getAttribute('data-statut').toLowerCase();
+            const search = row.getAttribute('data-search');
+
+            const matchStatut = !statutValue || statut === statutValue;
+            const matchSearch = !searchValue || search.includes(searchValue);
+
+            if (matchStatut && matchSearch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    filterStatut.addEventListener('change', filterTable);
+    searchInput.addEventListener('input', filterTable);
+    
+    clearFilters.addEventListener('click', function() {
+        filterStatut.value = '';
+        searchInput.value = '';
+        filterTable();
+    });
+});
+</script>
+{% endblock %}

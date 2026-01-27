@@ -101,6 +101,27 @@
                         </li>
                     {% endif %}
 
+                    {# Menu Comptabilité (comptable + admin) #}
+                    {% if is_granted('ROLE_COMPTABLE') or is_granted('ROLE_ADMIN') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_comptabilite' ? 'active' : '' }}" href="#" id="comptabiliteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-calculator"></i> <span class="d-none d-md-inline">Comptabilité</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="comptabiliteDropdown">
+                                <li><a class="dropdown-item" href="{{ path('app_comptabilite_dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Tableau de bord
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ path('app_comptabilite_periodes') }}">
+                                    <i class="bi bi-calendar-range"></i> Périodes de facturation
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ path('app_comptabilite_contrats') }}">
+                                    <i class="bi bi-file-earmark-text"></i> Contrats
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+
                     {# Menu Administration (admin) #}
                     {% if is_granted('ROLE_ADMIN') %}
                         <li class="nav-item dropdown">

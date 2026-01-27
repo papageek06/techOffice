@@ -2,7 +2,7 @@
 
 **⚠️ IMPORTANT : Ce document doit être tenu à jour à chaque modification de la structure de la base de données.**
 
-**Dernière mise à jour :** 2026-01-25
+**Dernière mise à jour :** 2026-01-26
 
 ---
 
@@ -16,6 +16,8 @@ Cette base de données gère :
 - Les utilisateurs et leur authentification
 - Les demandes de congé
 - La vérification d'appareil (device check) avec OTP
+- Les contrats clients et facturation par période
+- La gestion des stocks multi-emplacements
 
 ---
 
@@ -318,6 +320,274 @@ Table des défis OTP pour la validation d'appareil.
 
 ---
 
+### 13. `contrat`
+
+Table des contrats clients.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `client_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `client.id` |
+| `reference` | VARCHAR(100) | NOT NULL | Référence du contrat |
+| `type_contrat` | VARCHAR(255) | NOT NULL | Type (Enum: TypeContrat) |
+| `date_debut` | DATE | NOT NULL | Date de début du contrat |
+| `date_fin` | DATE | NULL | Date de fin du contrat (NULL = en cours) |
+| `statut` | VARCHAR(255) | NOT NULL, DEFAULT 'BROUILLON' | Statut (Enum: StatutContrat) |
+| `notes` | TEXT | NULL | Notes diverses |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `ManyToOne` → `client` (via `client_id`)
+- `OneToMany` → `contrat_ligne` (via `contrat_id`)
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si un client est supprimé, ses contrats sont supprimés
+
+---
+
+### 14. `contrat_ligne`
+
+Table des lignes de contrat (une ligne par site).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `contrat_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `contrat.id` |
+| `site_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `site.id` |
+| `libelle` | VARCHAR(255) | NOT NULL | Libellé de la ligne |
+| `periodicite` | VARCHAR(255) | NOT NULL | Périodicité (Enum: Periodicite) |
+| `prochaine_facturation` | DATE | NOT NULL | Date de prochaine facturation |
+| `prix_fixe` | DECIMAL(10,2) | NULL | Prix fixe (abonnement) |
+| `prix_page_noir` | DECIMAL(10,4) | NULL | Prix par page noire |
+| `prix_page_couleur` | DECIMAL(10,4) | NULL | Prix par page couleur |
+| `pages_incluses_noir` | INT | NULL | Nombre de pages noires incluses |
+| `pages_incluses_couleur` | INT | NULL | Nombre de pages couleur incluses |
+| `actif` | BOOLEAN | NOT NULL, DEFAULT TRUE | Ligne active ou non |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `ManyToOne` → `contrat` (via `contrat_id`)
+- `ManyToOne` → `site` (via `site_id`)
+- `OneToMany` → `affectation_materiel` (via `contrat_ligne_id`)
+- `OneToMany` → `facturation_periode` (via `contrat_ligne_id`)
+
+**Index :**
+- `idx_prochaine_facturation` : Index sur `prochaine_facturation`
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si un contrat est supprimé, ses lignes sont supprimées
+- `ON DELETE CASCADE` : Si un site est supprimé, les lignes de contrat associées sont supprimées
+
+---
+
+### 15. `affectation_materiel`
+
+Table des affectations d'imprimantes aux lignes de contrat.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `contrat_ligne_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `contrat_ligne.id` |
+| `imprimante_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `imprimante.id` |
+| `date_debut` | DATETIME | NOT NULL | Date de début de l'affectation |
+| `date_fin` | DATETIME | NULL | Date de fin de l'affectation (NULL = active) |
+| `type_affectation` | VARCHAR(255) | NOT NULL, DEFAULT 'PRINCIPALE' | Type (Enum: TypeAffectation) |
+| `reason` | TEXT | NULL | Raison du changement |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `ManyToOne` → `contrat_ligne` (via `contrat_ligne_id`)
+- `ManyToOne` → `imprimante` (via `imprimante_id`)
+- `OneToMany` → `facturation_compteur` (via `affectation_materiel_id`)
+
+**Index :**
+- `idx_contrat_ligne` : Index sur `contrat_ligne_id`
+- `idx_imprimante` : Index sur `imprimante_id`
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si une ligne de contrat est supprimée, ses affectations sont supprimées
+- `ON DELETE CASCADE` : Si une imprimante est supprimée, ses affectations sont supprimées
+
+**Note :** 
+- Une seule affectation active (`date_fin` NULL) par `contrat_ligne_id` à la fois.
+- Lors d'un changement de machine, l'affectation précédente est automatiquement clôturée.
+
+---
+
+### 16. `facturation_periode`
+
+Table des périodes de facturation pour les lignes de contrat.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `contrat_ligne_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `contrat_ligne.id` |
+| `date_debut` | DATE | NOT NULL | Date de début de la période |
+| `date_fin` | DATE | NOT NULL | Date de fin de la période |
+| `statut` | VARCHAR(255) | NOT NULL, DEFAULT 'BROUILLON' | Statut (Enum: StatutFacturation) |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+
+**Relations :**
+- `ManyToOne` → `contrat_ligne` (via `contrat_ligne_id`)
+- `OneToMany` → `facturation_compteur` (via `facturation_periode_id`)
+
+**Index :**
+- `idx_contrat_ligne` : Index sur `contrat_ligne_id`
+- `idx_statut` : Index sur `statut`
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si une ligne de contrat est supprimée, ses périodes sont supprimées
+
+**Note :** Les périodes sont générées automatiquement selon la périodicité de la ligne de contrat.
+
+---
+
+### 17. `facturation_compteur`
+
+Table des compteurs de début et fin pour chaque affectation dans une période de facturation.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `facturation_periode_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `facturation_periode.id` |
+| `affectation_materiel_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `affectation_materiel.id` |
+| `compteur_debut_noir` | INT | NOT NULL | Compteur noir au début de la période |
+| `compteur_fin_noir` | INT | NOT NULL | Compteur noir à la fin de la période |
+| `compteur_debut_couleur` | INT | NULL | Compteur couleur au début de la période |
+| `compteur_fin_couleur` | INT | NULL | Compteur couleur à la fin de la période |
+| `source_debut` | VARCHAR(255) | NOT NULL | Source du compteur début (Enum: SourceCompteur) |
+| `source_fin` | VARCHAR(255) | NOT NULL | Source du compteur fin (Enum: SourceCompteur) |
+
+**Relations :**
+- `ManyToOne` → `facturation_periode` (via `facturation_periode_id`)
+- `ManyToOne` → `affectation_materiel` (via `affectation_materiel_id`)
+
+**Index :**
+- `idx_facturation_periode` : Index sur `facturation_periode_id`
+- `idx_affectation_materiel` : Index sur `affectation_materiel_id`
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si une période est supprimée, ses compteurs sont supprimés
+- `ON DELETE CASCADE` : Si une affectation est supprimée, ses compteurs sont supprimés
+
+**Note :** 
+- Les compteurs sont résolus automatiquement depuis `releve_compteur` lors de la création d'une période.
+- Le nombre de pages consommées est calculé : `compteur_fin - compteur_debut`.
+
+---
+
+### 18. `stock_location`
+
+Table des emplacements de stock (ateliers, dépôts, stocks clients).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `site_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `site.id` |
+| `type` | VARCHAR(255) | NOT NULL | Type (Enum: StockLocationType) |
+| `nom_stock` | VARCHAR(255) | NOT NULL | Nom de l'emplacement de stock |
+| `actif` | BOOLEAN | NOT NULL, DEFAULT TRUE | Emplacement actif ou non |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `ManyToOne` → `site` (via `site_id`)
+- `OneToMany` → `stock_item` (via `stock_location_id`)
+
+**Index :**
+- `idx_type` : Index sur `type`
+- `uniq_site_nom_stock` : Unique sur (`site_id`, `nom_stock`)
+
+**Note :** Plusieurs stocks peuvent exister sur un même site (ex: "Atelier principal" et "Dépôt secondaire").
+
+---
+
+### 19. `piece`
+
+Table du catalogue des pièces consommables (toners, bacs, tambours, etc.).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `reference` | VARCHAR(150) | UNIQUE, NOT NULL | Référence de la pièce |
+| `designation` | VARCHAR(255) | NOT NULL | Désignation de la pièce |
+| `type_piece` | VARCHAR(255) | NOT NULL | Type (Enum: PieceType) |
+| `couleur` | VARCHAR(10) | NULL | Couleur (K, C, M, Y pour les toners) |
+| `actif` | BOOLEAN | NOT NULL, DEFAULT TRUE | Pièce active ou non |
+| `notes` | TEXT | NULL | Notes diverses |
+| `created_at` | DATETIME | NOT NULL | Date de création |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `OneToMany` → `stock_item` (via `piece_id`)
+- `OneToMany` → `piece_modele` (via `piece_id`)
+
+**Index :**
+- `uniq_piece_reference` : Unique sur `reference`
+
+---
+
+### 20. `stock_item`
+
+Table des quantités de pièces dans chaque emplacement de stock.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `stock_location_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `stock_location.id` |
+| `piece_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `piece.id` |
+| `quantite` | INT | NOT NULL, DEFAULT 0 | Quantité en stock |
+| `seuil_alerte` | INT | NULL | Seuil d'alerte (quantité minimale) |
+| `updated_at` | DATETIME | NOT NULL | Date de mise à jour |
+
+**Relations :**
+- `ManyToOne` → `stock_location` (via `stock_location_id`)
+- `ManyToOne` → `piece` (via `piece_id`)
+
+**Index :**
+- `idx_stock_location_id` : Index sur `stock_location_id`
+- `idx_piece_id` : Index sur `piece_id`
+- `uniq_stock_piece` : Unique sur (`stock_location_id`, `piece_id`)
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si un emplacement de stock est supprimé, ses items sont supprimés
+- `ON DELETE CASCADE` : Si une pièce est supprimée, ses items de stock sont supprimés
+
+**Note :** Une seule entrée par combinaison (`stock_location_id`, `piece_id`).
+
+---
+
+### 21. `piece_modele`
+
+Table de compatibilité entre les pièces et les modèles d'imprimantes (table pivot avec rôle).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `piece_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `piece.id` |
+| `modele_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `modele.id` |
+| `role` | VARCHAR(255) | NOT NULL | Rôle de la pièce (Enum: PieceRoleModele) |
+| `notes` | TEXT | NULL | Notes diverses |
+
+**Relations :**
+- `ManyToOne` → `piece` (via `piece_id`)
+- `ManyToOne` → `modele` (via `modele_id`)
+
+**Index :**
+- `idx_modele_id` : Index sur `modele_id`
+- `uniq_piece_modele_role` : Unique sur (`piece_id`, `modele_id`, `role`)
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si une pièce est supprimée, ses compatibilités sont supprimées
+- `ON DELETE CASCADE` : Si un modèle est supprimé, ses compatibilités sont supprimées
+
+**Note :** Le rôle indique la fonction de la pièce pour ce modèle (ex: TONER_K pour le toner noir).
+
+---
+
 ## Enums
 
 ### StatutImprimante
@@ -351,16 +621,82 @@ Table des défis OTP pour la validation d'appareil.
 - `MATERNITE`
 - `PATERNITE`
 
+### TypeContrat
+- `MAINTENANCE`
+- `LOCATION`
+- `VENTE`
+- `PRET`
+
+### StatutContrat
+- `BROUILLON`
+- `ACTIF`
+- `SUSPENDU`
+- `RESILIE`
+- `TERMINE`
+
+### Periodicite
+- `MENSUEL`
+- `TRIMESTRIEL`
+- `SEMESTRIEL`
+- `ANNUEL`
+
+### TypeAffectation
+- `PRINCIPALE`
+- `REMPLACEMENT_TEMP`
+- `REMPLACEMENT_DEF`
+- `PRET`
+
+### StatutFacturation
+- `BROUILLON`
+- `VALIDE`
+- `FACTURE`
+
+### SourceCompteur
+- `MANUEL`
+- `SNMP`
+- `SCAN`
+
+### StockLocationType
+- `ENTREPRISE`
+- `CLIENT`
+
+### PieceType
+- `TONER`
+- `BAC_RECUP`
+- `DRUM`
+- `FUSER`
+- `MAINTENANCE_KIT`
+- `AUTRE`
+
+### PieceRoleModele
+- `TONER_K` (Toner Noir)
+- `TONER_C` (Toner Cyan)
+- `TONER_M` (Toner Magenta)
+- `TONER_Y` (Toner Jaune)
+- `BAC_RECUP` (Bac de récupération)
+- `DRUM` (Tambour)
+- `FUSER` (Unité de fusion)
+- `AUTRE` (Autre pièce)
+
 ---
 
 ## Relations entre tables
 
 ```
 client (1) ──< (N) site (1) ──< (N) imprimante (1) ──< (N) intervention
-                                                      └──< (N) releve_compteur
-                                                      └──< (N) etat_consommable
+      │              │                    │              └──< (N) releve_compteur
+      │              │                    │              └──< (N) etat_consommable
+      │              │                    │              └──< (N) affectation_materiel
+      │              └──< (N) stock_location (1) ──< (N) stock_item
+      │
+      └──< (N) contrat (1) ──< (N) contrat_ligne (1) ──< (N) affectation_materiel
+                                                      └──< (N) facturation_periode (1) ──< (N) facturation_compteur
 
 fabricant (1) ──< (N) modele (1) ──< (N) imprimante
+                              └──< (N) piece_modele
+
+piece (1) ──< (N) stock_item
+      └──< (N) piece_modele
 
 user (1) ──< (N) intervention
       └──< (N) demande_conge
@@ -384,6 +720,18 @@ user (1) ──< (N) intervention
    - Les appareils expirés peuvent être supprimés automatiquement
 
 4. **Cascade** : La plupart des relations utilisent `ON DELETE CASCADE` pour maintenir l'intégrité référentielle.
+
+5. **Contrats et Facturation** :
+   - Les périodes de facturation sont générées automatiquement selon la périodicité des lignes de contrat.
+   - Les compteurs de facturation sont résolus depuis `releve_compteur` lors de la création d'une période.
+   - Une seule affectation active (`date_fin` NULL) par ligne de contrat à la fois.
+   - Lors d'un changement de machine, l'affectation précédente est automatiquement clôturée.
+
+6. **Gestion des stocks** :
+   - Les emplacements de stock peuvent être de type ENTREPRISE (atelier, dépôt) ou CLIENT (sur site client).
+   - Plusieurs stocks peuvent exister sur un même site (contrainte unique sur `site_id` + `nom_stock`).
+   - Les pièces sont liées aux modèles via `piece_modele` avec un rôle spécifique (TONER_K, TONER_C, etc.).
+   - Les seuils d'alerte permettent de surveiller les stocks faibles.
 
 ---
 

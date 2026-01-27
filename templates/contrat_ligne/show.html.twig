@@ -1,0 +1,199 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ligne de contrat - {{ contrat_ligne.libelle }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-list-ul"></i> {{ contrat_ligne.libelle }}
+            </h1>
+            <p class="text-muted mb-0">
+                <span class="badge bg-info">{{ contrat_ligne.periodicite.value }}</span>
+                {% if not contrat_ligne.actif %}
+                    <span class="badge bg-secondary ms-2">Inactif</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_contrat_ligne_edit', {'id': contrat_ligne.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_contrat_ligne_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Contrat</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_contrat_show', {'id': contrat_ligne.contrat.id}) }}" class="text-decoration-none">
+                                <strong>{{ contrat_ligne.contrat.reference }}</strong>
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-4">Site</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_site_show', {'id': contrat_ligne.site.id}) }}" class="text-decoration-none">
+                                {{ contrat_ligne.site.nomSite }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-4">Libellé</dt>
+                        <dd class="col-sm-8"><strong>{{ contrat_ligne.libelle }}</strong></dd>
+
+                        <dt class="col-sm-4">Périodicité</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info">{{ contrat_ligne.periodicite.value }}</span>
+                        </dd>
+
+                        <dt class="col-sm-4">Prochaine facturation</dt>
+                        <dd class="col-sm-8">{{ contrat_ligne.prochaineFacturation|date('d/m/Y') }}</dd>
+
+                        <dt class="col-sm-4">Prix fixe</dt>
+                        <dd class="col-sm-8">
+                            {% if contrat_ligne.prixFixe %}
+                                <strong>{{ contrat_ligne.prixFixe|number_format(2, ',', ' ') }} €</strong>
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Prix page noir</dt>
+                        <dd class="col-sm-8">
+                            {% if contrat_ligne.prixPageNoir %}
+                                {{ contrat_ligne.prixPageNoir|number_format(4, ',', ' ') }} €
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Prix page couleur</dt>
+                        <dd class="col-sm-8">
+                            {% if contrat_ligne.prixPageCouleur %}
+                                {{ contrat_ligne.prixPageCouleur|number_format(4, ',', ' ') }} €
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Pages incluses (noir)</dt>
+                        <dd class="col-sm-8">
+                            {% if contrat_ligne.pagesInclusesNoir %}
+                                {{ contrat_ligne.pagesInclusesNoir }}
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Pages incluses (couleur)</dt>
+                        <dd class="col-sm-8">
+                            {% if contrat_ligne.pagesInclusesCouleur %}
+                                {{ contrat_ligne.pagesInclusesCouleur }}
+                            {% else %}
+                                <span class="text-muted">Non défini</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-printer-fill"></i> Affectations matériel</h5>
+                    <a href="{{ path('app_affectation_materiel_new') }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle"></i> Ajouter
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if contrat_ligne.affectationsMateriel is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune affectation matériel</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Imprimante</th>
+                                        <th>Période</th>
+                                        <th>Type</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for affectation in contrat_ligne.affectationsMateriel %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ affectation.imprimante.numeroSerie }}</strong><br>
+                                                <small class="text-muted">
+                                                    {{ affectation.imprimante.modele.fabricant.nomFabricant }} {{ affectation.imprimante.modele.referenceModele }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {{ affectation.dateDebut|date('d/m/Y') }}<br>
+                                                    {% if affectation.dateFin %}
+                                                        → {{ affectation.dateFin|date('d/m/Y') }}
+                                                    {% else %}
+                                                        <span class="badge bg-success">Active</span>
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ affectation.typeAffectation.value }}</span>
+                                            </td>
+                                            <td>
+                                                {% if affectation.dateFin is null %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Clôturée</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_affectation_materiel_show', {'id': affectation.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_contrat_ligne_edit', {'id': contrat_ligne.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_affectation_materiel_new') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-link-45deg"></i> Ajouter une affectation
+                        </a>
+                        {{ include('contrat_ligne/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

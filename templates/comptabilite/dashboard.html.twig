@@ -1,0 +1,315 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord Comptabilité - TechOffice{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    {# En-tête #}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="bi bi-calculator"></i> Comptabilité
+                    </h1>
+                    <p class="text-muted mb-0">Tableau de bord de la facturation et des contrats</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ path('app_comptabilite_periodes') }}" class="btn btn-primary">
+                        <i class="bi bi-calendar-range"></i> Périodes
+                    </a>
+                    <a href="{{ path('app_comptabilite_contrats') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-file-earmark-text"></i> Contrats
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Cartes statistiques #}
+    <div class="row g-3 mb-4" id="statsCards">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.contrats_actifs }}</h3>
+                    <small class="text-muted">Contrat(s) actif(s)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card border-warning">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-file-earmark-text fs-1 text-warning"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.periodes_brouillon }}</h3>
+                    <small class="text-muted">Période(s) en brouillon</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card border-info">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-check-circle fs-1 text-info"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.periodes_validees }}</h3>
+                    <small class="text-muted">Période(s) validée(s)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stats-card border-success">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="bi bi-receipt fs-1 text-success"></i>
+                    </div>
+                    <h3 class="mb-0">{{ stats.periodes_facturees }}</h3>
+                    <small class="text-muted">Période(s) facturée(s)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Contenu principal en 2 colonnes #}
+    <div class="row g-4">
+        {# Colonne gauche - Périodes en brouillon #}
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Périodes en brouillon (à valider)
+                    </h5>
+                    <span class="badge bg-dark">{{ periodesAvecMontants|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if periodesAvecMontants is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune période en brouillon</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 20%;">Période</th>
+                                        <th style="width: 30%;">Contrat / Site</th>
+                                        <th style="width: 15%;">Pages</th>
+                                        <th style="width: 20%;">Montant</th>
+                                        <th style="width: 15%;" class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in periodesAvecMontants %}
+                                        <tr>
+                                            <td>
+                                                <small>
+                                                    {{ item.periode.dateDebut|date('d/m/Y') }}<br>
+                                                    <strong>{{ item.periode.dateFin|date('d/m/Y') }}</strong>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <strong>{{ item.periode.contratLigne.contrat.reference }}</strong><br>
+                                                <small class="text-muted">{{ item.periode.contratLigne.site.nomSite }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-dark">{{ item.pagesNoir }} N</span>
+                                                {% if item.pagesCouleur > 0 %}
+                                                    <span class="badge bg-info">{{ item.pagesCouleur }} C</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong class="text-success">{{ item.montant|number_format(2, ',', ' ') }} €</strong>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_comptabilite_periode_show', {'id': item.periode.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Voir
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Périodes validées récentes #}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Périodes validées récentes
+                    </h5>
+                    <a href="{{ path('app_comptabilite_periodes') }}" class="btn btn-sm btn-outline-primary">
+                        Voir tout <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if periodesValidees is empty %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Aucune période validée</p>
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Période</th>
+                                        <th>Contrat / Site</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for periode in periodesValidees %}
+                                        <tr>
+                                            <td>
+                                                <small>
+                                                    {{ periode.dateDebut|date('d/m/Y') }} - {{ periode.dateFin|date('d/m/Y') }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <strong>{{ periode.contratLigne.contrat.reference }}</strong><br>
+                                                <small class="text-muted">{{ periode.contratLigne.site.nomSite }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ periode.statut.value == 'FACTURE' ? 'success' : (periode.statut.value == 'VALIDE' ? 'info' : 'warning') }}">
+                                                    {{ periode.statut.value }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('app_comptabilite_periode_show', {'id': periode.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Colonne droite - Accès rapide et résumé #}
+        <div class="col-12 col-lg-4">
+            {# Résumé financier #}
+            <div class="card border-0 shadow-sm mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cash-stack"></i> Résumé financier
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Montant total validé</span>
+                            <strong class="fs-4 text-success">{{ montantTotalValide|number_format(2, ',', ' ') }} €</strong>
+                        </div>
+                        <small class="text-muted">Somme des périodes validées</small>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_comptabilite_periodes') }}" class="btn btn-outline-info">
+                            <i class="bi bi-calendar-range"></i> Voir toutes les périodes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {# Accès rapide #}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge"></i> Accès rapide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_comptabilite_periodes') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-calendar-range"></i> Périodes de facturation
+                        </a>
+                        <a href="{{ path('app_comptabilite_contrats') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-file-earmark-text"></i> Contrats
+                        </a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <hr>
+                            <a href="{{ path('app_user_index') }}" class="btn btn-outline-secondary text-start">
+                                <i class="bi bi-people"></i> Utilisateurs
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# Actions rapides #}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tools"></i> Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" onclick="alert('Fonctionnalité à venir: Génération des périodes')">
+                            <i class="bi bi-play-circle"></i> Générer les périodes
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="alert('Fonctionnalité à venir: Export comptable')">
+                            <i class="bi bi-download"></i> Export comptable
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation des cartes statistiques
+    const statsCards = document.querySelectorAll('.stats-card');
+    statsCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+
+    // Effet hover sur les cartes
+    statsCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+
+<style>
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}
