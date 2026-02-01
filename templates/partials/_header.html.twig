@@ -68,6 +68,13 @@
                         </a>
                     </li>
 
+                    {# Contacts M365 #}
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_admin_contacts' ? 'active' : '' }}" href="{{ path('app_admin_contacts_index') }}">
+                            <i class="bi bi-journal-text"></i> <span class="d-none d-md-inline">Contacts</span>
+                        </a>
+                    </li>
+
                     {# Menu Clients #}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_client' ? 'active' : '' }}" href="#" id="clientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

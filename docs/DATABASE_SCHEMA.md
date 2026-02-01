@@ -2,7 +2,7 @@
 
 **⚠️ IMPORTANT : Ce document doit être tenu à jour à chaque modification de la structure de la base de données.**
 
-**Dernière mise à jour :** 2026-01-26
+**Dernière mise à jour :** 2026-01-28
 
 ---
 
@@ -133,10 +133,10 @@ Table des imprimantes installées.
 | `date_installation` | DATE | NULL | Date d'installation |
 | `adresse_ip` | VARCHAR(45) | NULL | Adresse IP de l'imprimante |
 | `emplacement` | VARCHAR(255) | NULL | Emplacement physique |
-| `suivie_par_service` | BOOLEAN | NOT NULL, DEFAULT TRUE | Suivi par le service (MANAGED) |
+| `suivie_par_service` | BOOLEAN | NOT NULL, DEFAULT TRUE | Suivi par le service (managed) |
 | `statut` | VARCHAR(255) | NOT NULL, DEFAULT 'actif' | Statut (Enum: StatutImprimante) |
 | `notes` | TEXT | NULL | Notes diverses |
-| `dual_scan` | BOOLEAN | NOT NULL, DEFAULT FALSE | Scanner recto-verso automatique (A) |
+| `dual_scan` | BOOLEAN | NOT NULL, DEFAULT FALSE | Scanner recto-verso (dual scan) |
 
 **Relations :**
 - `ManyToOne` → `site` (via `site_id`)
@@ -224,20 +224,43 @@ Table des interventions techniques.
 | `description` | TEXT | NOT NULL | Description de l'intervention |
 | `temps_facturable_minutes` | INT | NOT NULL, DEFAULT 0 | Temps facturable en minutes |
 | `temps_reel_minutes` | INT | NULL | Temps réel en minutes |
-| `facturable` | BOOLEAN | NOT NULL, DEFAULT TRUE | Intervention facturable ou non |
+| `facturable` | BOOLEAN | NULL | null = non validé par l'admin, true = à facturer, false = ne pas facturer (visible uniquement aux admins) |
+| `stock_applique` | BOOLEAN | NOT NULL, DEFAULT FALSE | True une fois les mouvements de stock appliqués à la clôture |
 
 **Relations :**
 - `ManyToOne` → `imprimante` (via `imprimante_id`)
 - `ManyToOne` → `user` (via `utilisateur_id`)
+- `OneToMany` → `intervention_ligne` (via `intervention_id`)
 
 **Contraintes :**
 - `ON DELETE CASCADE` : Si une imprimante est supprimée, ses interventions sont supprimées
 
 ---
 
-### 10. `demande_conge`
+### 10. `intervention_ligne`
 
-Table des demandes de congé.
+Lignes d'une intervention (pièces livrées ou installées). Utilisées pour appliquer les mouvements de stock à la clôture (débit entreprise, crédit client pour toners/bacs uniquement).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| `id` | INT | PRIMARY KEY, AUTO_INCREMENT | Identifiant unique |
+| `intervention_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `intervention.id` |
+| `piece_id` | INT | FOREIGN KEY, NOT NULL | Référence vers `piece.id` |
+| `quantite` | INT | NOT NULL | Quantité livrée/installée |
+
+**Relations :**
+- `ManyToOne` → `intervention` (via `intervention_id`)
+- `ManyToOne` → `piece` (via `piece_id`)
+
+**Contraintes :**
+- `ON DELETE CASCADE` : Si une intervention est supprimée, ses lignes sont supprimées
+- `ON DELETE CASCADE` : Si une pièce est supprimée, les lignes associées sont supprimées
+
+---
+
+### 11. `demande_conge`
+
+Table des demandes de congé (numérotation conservée après insertion de `intervention_ligne`).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -591,35 +614,19 @@ Table de compatibilité entre les pièces et les modèles d'imprimantes (table p
 ## Enums
 
 ### StatutImprimante
-- `ACTIF`
-- `INACTIF`
-- `EN_PANNE`
-- `EN_REPARATION`
+- `actif`, `pret`, `assurance`, `hs`, `decheterie`
 
 ### StatutIntervention
-- `OUVERTE`
-- `EN_COURS`
-- `FERMEE`
-- `ANNULEE`
+- `ouverte`, `en_cours`, `terminee`, `annulee`
 
 ### TypeIntervention
-- `SUR_SITE`
-- `A_DISTANCE`
-- `PREVENTIVE`
-- `CORRECTIVE`
+- `sur_site`, `distance`, `atelier`, `livraison_toner`
 
 ### StatutDemandeConge
-- `DEMANDEE`
-- `APPROUVEE`
-- `REFUSEE`
-- `ANNULEE`
+- `demandee`, `acceptee`, `refusee`, `annulee`
 
 ### TypeConge
-- `PAYE`
-- `SANS_SOLDE`
-- `MALADIE`
-- `MATERNITE`
-- `PATERNITE`
+- `paye`, `sans_solde`, `maladie`
 
 ### TypeContrat
 - `MAINTENANCE`
@@ -683,7 +690,7 @@ Table de compatibilité entre les pièces et les modèles d'imprimantes (table p
 ## Relations entre tables
 
 ```
-client (1) ──< (N) site (1) ──< (N) imprimante (1) ──< (N) intervention
+client (1) ──< (N) site (1) ──< (N) imprimante (1) ──< (N) intervention (1) ──< (N) intervention_ligne
       │              │                    │              └──< (N) releve_compteur
       │              │                    │              └──< (N) etat_consommable
       │              │                    │              └──< (N) affectation_materiel
@@ -697,6 +704,7 @@ fabricant (1) ──< (N) modele (1) ──< (N) imprimante
 
 piece (1) ──< (N) stock_item
       └──< (N) piece_modele
+      └──< (N) intervention_ligne
 
 user (1) ──< (N) intervention
       └──< (N) demande_conge

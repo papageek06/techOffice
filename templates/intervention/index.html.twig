@@ -10,13 +10,14 @@
             <tr>
                 <th>Id</th>
                 <th>DateCreation</th>
-                <th>DateIntervention</th>
                 <th>TypeIntervention</th>
                 <th>Statut</th>
                 <th>Description</th>
                 <th>TempsFacturableMinutes</th>
                 <th>TempsReelMinutes</th>
+                {% if is_granted('ROLE_ADMIN') %}
                 <th>Facturable</th>
+                {% endif %}
                 <th>actions</th>
             </tr>
         </thead>
@@ -25,13 +26,14 @@
             <tr>
                 <td>{{ intervention.id }}</td>
                 <td>{{ intervention.dateCreation ? intervention.dateCreation|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ intervention.dateIntervention ? intervention.dateIntervention|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ intervention.typeIntervention.value }}</td>
                 <td>{{ intervention.statut.value }}</td>
                 <td>{{ intervention.description }}</td>
                 <td>{{ intervention.tempsFacturableMinutes }}</td>
                 <td>{{ intervention.tempsReelMinutes }}</td>
-                <td>{{ intervention.facturable ? 'Yes' : 'No' }}</td>
+                {% if is_granted('ROLE_ADMIN') %}
+                <td>{{ intervention.facturable is null ? 'Non validé' : (intervention.facturable ? 'Oui' : 'Non') }}</td>
+                {% endif %}
                 <td>
                     <a href="{{ path('app_intervention_show', {'id': intervention.id}) }}">show</a>
                     <a href="{{ path('app_intervention_edit', {'id': intervention.id}) }}">edit</a>
@@ -39,7 +41,7 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="10">no records found</td>
+                <td colspan="{{ is_granted('ROLE_ADMIN') ? 9 : 8 }}">no records found</td>
             </tr>
         {% endfor %}
         </tbody>

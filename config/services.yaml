@@ -36,3 +36,19 @@ services:
     App\EventListener\InterventionStockListener:
         tags:
             - { name: doctrine.event_subscriber }
+
+    # Microsoft 365 (Graph API, contacts partagés)
+    App\Service\M365\MicrosoftOAuth2Service:
+        arguments:
+            $tenantId: '%m365_tenant_id%'
+            $clientId: '%m365_client_id%'
+            $clientSecret: '%m365_client_secret%'
+            $redirectUri: '%m365_redirect_uri%'
+
+    App\Service\M365\MicrosoftGraphClient:
+        arguments:
+            $httpClient: '@http_client'
+
+    App\Service\M365\M365ContactSyncService:
+        arguments:
+            $sharedFolderId: '%m365_shared_folder_id%'

@@ -39,10 +39,12 @@
                 <th>TempsReelMinutes</th>
                 <td>{{ intervention.tempsReelMinutes }}</td>
             </tr>
+            {% if is_granted('ROLE_ADMIN') %}
             <tr>
                 <th>Facturable</th>
-                <td>{{ intervention.facturable ? 'Yes' : 'No' }}</td>
+                <td>{{ intervention.facturable is null ? 'Non validé (en attente)' : (intervention.facturable ? 'Oui, à facturer' : 'Non, ne pas facturer') }}</td>
             </tr>
+            {% endif %}
             {% if intervention.typeIntervention.value == 'livraison_toner' %}
             <tr>
                 <th>Mouvement de stock</th>

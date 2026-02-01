@@ -48,6 +48,7 @@ final class InterventionController extends AbstractController
         $form = $this->createForm(InterventionType::class, $intervention, [
             'site' => $site,
             'from_site' => $site !== null,
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
         ]);
         $form->handleRequest($request);
 
@@ -122,6 +123,7 @@ final class InterventionController extends AbstractController
         $form = $this->createForm(InterventionType::class, $intervention, [
             'site' => null,
             'from_site' => false,
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
         ]);
         $form->handleRequest($request);
 

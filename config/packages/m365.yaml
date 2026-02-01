@@ -1,0 +1,19 @@
+# Microsoft 365 / Graph API (contacts partagés)
+# TODO: Créer une application Azure/Entra, ajouter Redirect URI, permissions Graph (Contacts.Read.Shared) + consent admin
+parameters:
+    m365_tenant_id: '%env(M365_TENANT_ID)%'
+    m365_client_id: '%env(M365_CLIENT_ID)%'
+    m365_client_secret: '%env(M365_CLIENT_SECRET)%'
+    m365_redirect_uri: '%env(M365_REDIRECT_URI)%'
+    m365_shared_folder_id: '%env(default:m365_shared_folder_empty:M365_SHARED_FOLDER_ID)%'
+    m365_shared_folder_empty: ''
+
+framework:
+    http_client:
+        default_options:
+            timeout: 30
+        scoped_clients:
+            m365.graph:
+                base_uri: 'https://graph.microsoft.com/v1.0'
+                headers:
+                    Accept: 'application/json'

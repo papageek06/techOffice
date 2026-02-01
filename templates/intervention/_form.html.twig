@@ -24,9 +24,11 @@
             {{ form_row(form.tempsReelMinutes) }}
         </div>
 
+        {% if form.facturable is defined %}
         <div class="col-12 col-md-4">
             {{ form_row(form.facturable) }}
         </div>
+        {% endif %}
 
         {% if form.utilisateur is defined %}
         <div class="col-12">

@@ -45,8 +45,9 @@ class Intervention
     #[ORM\Column(nullable: true)]
     private ?int $tempsReelMinutes = null;
 
-    #[ORM\Column(options: ['default' => true])]
-    private bool $facturable = true;
+    /** null = non validé par l'admin, true = à facturer, false = ne pas facturer */
+    #[ORM\Column(nullable: true)]
+    private ?bool $facturable = null;
 
     /** True une fois les mouvements de stock appliqués à la clôture (livraison toner). */
     #[ORM\Column(options: ['default' => false])]
@@ -166,12 +167,12 @@ class Intervention
         return $this;
     }
 
-    public function isFacturable(): bool
+    public function isFacturable(): ?bool
     {
         return $this->facturable;
     }
 
-    public function setFacturable(bool $facturable): self
+    public function setFacturable(?bool $facturable): self
     {
         $this->facturable = $facturable;
         return $this;

@@ -9,7 +9,6 @@ use App\Enum\StatutIntervention;
 use App\Enum\TypeIntervention;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -106,11 +105,23 @@ class InterventionType extends AbstractType
                 ],
                 'help' => 'Temps réel passé sur l\'intervention (optionnel)'
             ])
-            ->add('facturable', CheckboxType::class, [
-                'label' => 'Facturable',
+        ;
+
+        if ($options['is_admin'] ?? false) {
+            $builder->add('facturable', ChoiceType::class, [
+                'label' => 'À facturer ?',
                 'required' => false,
-                'attr' => ['class' => 'form-check-input'],
-            ])
+                'placeholder' => 'Non validé (en attente)',
+                'choices' => [
+                    'Oui, à facturer' => true,
+                    'Non, ne pas facturer' => false,
+                ],
+                'attr' => ['class' => 'form-select'],
+                'help' => 'L\'admin valide si l\'intervention doit être facturée. Par défaut : non validé.',
+            ]);
+        }
+
+        $builder
             ->add('lignes', CollectionType::class, [
                 'entry_type' => InterventionLigneType::class,
                 'entry_options' => ['label' => false],
@@ -129,6 +140,7 @@ class InterventionType extends AbstractType
             'data_class' => Intervention::class,
             'site' => null,
             'from_site' => false,
+            'is_admin' => false,
         ]);
     }
 }
