@@ -57,12 +57,17 @@
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ path('app_contrat_show', {'id': contrat.id}) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{{ path('app_contrat_edit', {'id': contrat.id}) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('app_contrat_show', {'id': contrat.id}) }}" class="btn btn-outline-primary" title="Voir">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ path('app_contrat_edit', {'id': contrat.id}) }}" class="btn btn-outline-secondary" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ path('app_contrat_configure', {'id': contrat.id}) }}" class="btn btn-outline-success" title="Configurer">
+                                            <i class="bi bi-gear"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}

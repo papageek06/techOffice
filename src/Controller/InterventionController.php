@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Intervention;
+use App\Entity\Site;
 use App\Form\InterventionType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,20 +30,82 @@ final class InterventionController extends AbstractController
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $intervention = new Intervention();
-        $form = $this->createForm(InterventionType::class, $intervention);
+        $intervention->setDescription('');
+        $site = null;
+        $siteId = $request->query->getInt('site_id');
+        if ($siteId > 0) {
+            $site = $entityManager->getRepository(Site::class)->find($siteId);
+            if ($site) {
+                $imprimantes = $site->getImprimantes();
+                if ($imprimantes->count() === 1) {
+                    $intervention->setImprimante($imprimantes->first());
+                }
+                $intervention->setStatut(\App\Enum\StatutIntervention::OUVERTE);
+                $intervention->setUtilisateur($this->getUser());
+            }
+        }
+
+        $form = $this->createForm(InterventionType::class, $intervention, [
+            'site' => $site,
+            'from_site' => $site !== null,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($intervention->getUtilisateur() === null) {
+                $intervention->setUtilisateur($this->getUser());
+            }
             $entityManager->persist($intervention);
             $entityManager->flush();
 
             return $this->redirectToRoute('app_intervention_index', [], Response::HTTP_SEE_OTHER);
         }
 
+        $stockEntrepriseParPiece = [];
+        if ($site && $intervention->getImprimante()) {
+            $stockEntrepriseParPiece = $this->getStockEntreprisePourModele($entityManager, $intervention->getImprimante()->getModele()->getId());
+        }
+
         return $this->render('intervention/new.html.twig', [
             'intervention' => $intervention,
             'form' => $form,
+            'site' => $site,
+            'stock_entreprise' => $stockEntrepriseParPiece,
         ]);
+    }
+
+    private function getStockEntreprisePourModele(EntityManagerInterface $em, int $modeleId): array
+    {
+        $modele = $em->getRepository(\App\Entity\Modele::class)->find($modeleId);
+        if (!$modele) {
+            return [];
+        }
+        $stockLocationRepo = $em->getRepository(\App\Entity\StockLocation::class);
+        $stocks = $stockLocationRepo->findEntrepriseStocks();
+        if (empty($stocks)) {
+            return [];
+        }
+        $stock = $stocks[0];
+        $result = [];
+        foreach ($stock->getStockItems() as $item) {
+            $piece = $item->getPiece();
+            $pm = $em->getRepository(\App\Entity\PieceModele::class)
+                ->findOneBy(['piece' => $piece, 'modele' => $modele]);
+            if (!$pm) {
+                continue;
+            }
+            $role = $pm->getRole()->value;
+            $isTonerOuBac = str_starts_with($role, 'TONER_') || $role === 'BAC_RECUP';
+            if ($isTonerOuBac) {
+                $result[$piece->getId()] = [
+                    'quantite' => $item->getQuantite(),
+                    'reference' => $piece->getReference(),
+                    'designation' => $piece->getDesignation(),
+                    'role' => $role,
+                ];
+            }
+        }
+        return $result;
     }
 
     #[Route('/{id}', name: 'app_intervention_show', methods: ['GET'])]
@@ -56,7 +119,10 @@ final class InterventionController extends AbstractController
     #[Route('/{id}/edit', name: 'app_intervention_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Intervention $intervention, EntityManagerInterface $entityManager): Response
     {
-        $form = $this->createForm(InterventionType::class, $intervention);
+        $form = $this->createForm(InterventionType::class, $intervention, [
+            'site' => null,
+            'from_site' => false,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -65,9 +131,15 @@ final class InterventionController extends AbstractController
             return $this->redirectToRoute('app_intervention_index', [], Response::HTTP_SEE_OTHER);
         }
 
+        $stockEntrepriseParPiece = [];
+        if ($intervention->getImprimante()) {
+            $stockEntrepriseParPiece = $this->getStockEntreprisePourModele($entityManager, $intervention->getImprimante()->getModele()->getId());
+        }
+
         return $this->render('intervention/edit.html.twig', [
             'intervention' => $intervention,
             'form' => $form,
+            'stock_entreprise' => $stockEntrepriseParPiece,
         ]);
     }
 

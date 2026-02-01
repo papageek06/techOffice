@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -28,7 +29,9 @@ class DeviceCheckController extends AbstractController
         private LoginChallengeRepository $loginChallengeRepository,
         private UserDeviceRepository $userDeviceRepository,
         private OtpGenerator $otpGenerator,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        #[Autowire('%kernel.environment%')]
+        private string $kernelEnvironment
     ) {
     }
 
@@ -60,6 +63,11 @@ class DeviceCheckController extends AbstractController
             // Pas de challenge actif, rediriger vers le login
             $this->addFlash('error', 'Aucun code de vérification en attente. Veuillez vous reconnecter.');
             return $this->redirectToRoute('app_login');
+        }
+
+        $devOtpDisplay = null;
+        if ($this->kernelEnvironment === 'dev' && $request->getSession()->has('dev_otp_display')) {
+            $devOtpDisplay = $request->getSession()->get('dev_otp_display');
         }
 
         $form = $this->createForm(DeviceCheckType::class);
@@ -94,6 +102,7 @@ class DeviceCheckController extends AbstractController
                 return $this->render('security/device_check.html.twig', [
                     'form' => $form,
                     'challenge' => $challenge,
+                    'dev_otp_display' => $devOtpDisplay,
                 ]);
             }
 
@@ -103,6 +112,11 @@ class DeviceCheckController extends AbstractController
             // Supprimer le challenge utilisé
             $this->entityManager->remove($challenge);
             $this->entityManager->flush();
+
+            // En dev : retirer l'OTP affiché en session
+            if ($this->kernelEnvironment === 'dev') {
+                $request->getSession()->remove('dev_otp_display');
+            }
 
             $this->addFlash('success', 'Appareil enregistré avec succès. Vous êtes maintenant connecté.');
 
@@ -116,6 +130,7 @@ class DeviceCheckController extends AbstractController
         return $this->render('security/device_check.html.twig', [
             'form' => $form,
             'challenge' => $challenge,
+            'dev_otp_display' => $devOtpDisplay,
         ]);
     }
 

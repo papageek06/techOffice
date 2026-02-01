@@ -35,7 +35,9 @@ class DeviceCheckListener
         private EmailSenderInterface $emailSender,
         private EntityManagerInterface $entityManager,
         private RequestStack $requestStack,
-        private UrlGeneratorInterface $urlGenerator
+        private UrlGeneratorInterface $urlGenerator,
+        #[\Symfony\Component\DependencyInjection\Attribute\Autowire('%kernel.environment%')]
+        private string $kernelEnvironment
     ) {
     }
 
@@ -45,9 +47,14 @@ class DeviceCheckListener
     public function onLoginSuccess(LoginSuccessEvent $event): void
     {
         $user = $event->getUser();
-        
+
         if (!$user instanceof User) {
             return; // Pas un User de notre application
+        }
+
+        // Les administrateurs ne passent pas par la vérification email/SMS (OTP)
+        if ($user->getRoles() && \in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            return;
         }
 
         $request = $this->requestStack->getCurrentRequest();
@@ -128,6 +135,12 @@ class DeviceCheckListener
                 $deviceId,
                 $otpCode
             ));
+        }
+
+        // En local/dev : email et SMS ne partent pas (mocks) → stocker l'OTP en session
+        // pour l'afficher sur la page de validation
+        if ($this->kernelEnvironment === 'dev') {
+            $request->getSession()->set('dev_otp_display', $otpCode);
         }
     }
 

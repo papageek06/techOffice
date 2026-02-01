@@ -38,4 +38,40 @@ class PieceModeleRepository extends ServiceEntityRepository
 
         return $result instanceof Piece ? $result : null;
     }
+
+    /**
+     * Trouve toutes les pièces compatibles avec un modèle, triées par rôle (toners en premier)
+     */
+    public function findPiecesForModele(Modele $modele): array
+    {
+        $results = $this->createQueryBuilder('pm')
+            ->join('pm.piece', 'p')
+            ->where('pm.modele = :modele')
+            ->andWhere('p.actif = true')
+            ->setParameter('modele', $modele)
+            ->getQuery()
+            ->getResult();
+
+        // Trier manuellement pour mettre les toners en premier
+        usort($results, function($a, $b) {
+            $roleA = $a->getRole()->value;
+            $roleB = $b->getRole()->value;
+            
+            // Les toners en premier
+            $isTonerA = str_starts_with($roleA, 'TONER');
+            $isTonerB = str_starts_with($roleB, 'TONER');
+            
+            if ($isTonerA && !$isTonerB) {
+                return -1;
+            }
+            if (!$isTonerA && $isTonerB) {
+                return 1;
+            }
+            
+            // Si les deux sont des toners ou non-toners, trier par ordre alphabétique
+            return strcmp($roleA, $roleB);
+        });
+
+        return $results;
+    }
 }

@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\TypeAffectation;
 use App\Repository\AffectationMaterielRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -55,7 +57,7 @@ class AffectationMateriel
 
     public function __construct()
     {
-        $this->facturationCompteurs = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->facturationCompteurs = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }

@@ -14,14 +14,13 @@ use App\Enum\PieceRoleModele;
 use App\Enum\PieceType;
 use App\Enum\StockLocationType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 
 /**
  * Fixtures pour le système de stock
  * Nécessite que Client, Site, Fabricant, Modele existent déjà
  */
-class StockFixtures extends Fixture implements DependentFixtureInterface
+class StockFixtures extends Fixture
 {
     public function load(ObjectManager $manager): void
     {
@@ -167,12 +166,5 @@ class StockFixtures extends Fixture implements DependentFixtureInterface
         }
 
         $manager->flush();
-    }
-
-    public function getDependencies(): array
-    {
-        return [
-            // Dépend de Client, Site, Fabricant, Modele existants
-        ];
     }
 }

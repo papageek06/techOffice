@@ -81,6 +81,71 @@
         </div>
     </div>
 
+    {# Pièces compatibles #}
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-puzzle"></i> Pièces compatibles</h5>
+            <span class="badge bg-light text-dark">{{ pieceModeles|length }} pièce(s)</span>
+        </div>
+        <div class="card-body">
+            {% if pieceModeles is empty %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> Aucune pièce compatible enregistrée pour ce modèle.
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rôle</th>
+                                <th>Référence</th>
+                                <th>Désignation</th>
+                                <th>Type</th>
+                                <th class="text-end">Stock site</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pieceModele in pieceModeles %}
+                                {% set piece = pieceModele.piece %}
+                                {% set stockItem = stockParPiece[piece.id] ?? null %}
+                                <tr class="{{ stockItem and stockItem.seuilAlerte is not null and stockItem.quantite <= stockItem.seuilAlerte ? 'table-warning' : '' }}">
+                                    <td>
+                                        <span class="badge bg-{{ pieceModele.role.value starts with 'TONER' ? 'primary' : 'secondary' }}">
+                                            {{ pieceModele.role.value|replace({'_': ' '}) }}
+                                        </span>
+                                    </td>
+                                    <td><strong>{{ piece.reference }}</strong></td>
+                                    <td>{{ piece.designation }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ piece.typePiece.value }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if stockClient %}
+                                            {% if stockItem %}
+                                                <div>
+                                                    <span class="badge bg-{{ stockItem.quantite > 0 ? (stockItem.seuilAlerte is not null and stockItem.quantite <= stockItem.seuilAlerte ? 'warning' : 'success') : 'danger' }}">
+                                                        {{ stockItem.quantite }}
+                                                    </span>
+                                                    {% if stockItem.seuilAlerte is not null %}
+                                                        <small class="text-muted d-block">Seuil: {{ stockItem.seuilAlerte }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted"><small>Aucun stock client</small></span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     {# Historique des relevés de compteur #}
     <div class="card mb-4">
         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">

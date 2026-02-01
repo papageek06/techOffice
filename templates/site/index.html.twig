@@ -123,6 +123,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput.value.trim() !== '') {
         clearButton.style.display = '';
     }
+
+    // Clic sur une ligne imprimante → aller vers la fiche imprimante (fonctionne aussi après chargement AJAX)
+    searchResults.addEventListener('click', function(e) {
+        const row = e.target.closest('tr.imprimante-row');
+        if (row && row.dataset.href) {
+            e.preventDefault();
+            window.location.href = row.dataset.href;
+        }
+    });
+
+    // Touche Entrée sur une ligne imprimante (accessibilité)
+    searchResults.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        const row = e.target.closest('tr.imprimante-row');
+        if (row && row.dataset.href) {
+            e.preventDefault();
+            window.location.href = row.dataset.href;
+        }
+    });
 });
 </script>
 {% endblock %}

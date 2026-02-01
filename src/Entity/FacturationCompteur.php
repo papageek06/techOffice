@@ -46,6 +46,12 @@ class FacturationCompteur
     #[ORM\Column(enumType: SourceCompteur::class)]
     private SourceCompteur $sourceFin;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $compteurFinEstime = false;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $dateReleveFin = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -156,5 +162,27 @@ class FacturationCompteur
             return 0;
         }
         return max(0, $this->compteurFinCouleur - $this->compteurDebutCouleur);
+    }
+
+    public function isCompteurFinEstime(): bool
+    {
+        return $this->compteurFinEstime;
+    }
+
+    public function setCompteurFinEstime(bool $compteurFinEstime): self
+    {
+        $this->compteurFinEstime = $compteurFinEstime;
+        return $this;
+    }
+
+    public function getDateReleveFin(): ?\DateTimeImmutable
+    {
+        return $this->dateReleveFin;
+    }
+
+    public function setDateReleveFin(?\DateTimeImmutable $dateReleveFin): self
+    {
+        $this->dateReleveFin = $dateReleveFin;
+        return $this;
     }
 }

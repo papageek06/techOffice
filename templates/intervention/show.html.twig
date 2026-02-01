@@ -21,11 +21,11 @@
             </tr>
             <tr>
                 <th>TypeIntervention</th>
-                <td>{{ intervention.typeIntervention }}</td>
+                <td>{{ intervention.typeIntervention.value }}</td>
             </tr>
             <tr>
                 <th>Statut</th>
-                <td>{{ intervention.statut }}</td>
+                <td>{{ intervention.statut.value }}</td>
             </tr>
             <tr>
                 <th>Description</th>
@@ -43,8 +43,36 @@
                 <th>Facturable</th>
                 <td>{{ intervention.facturable ? 'Yes' : 'No' }}</td>
             </tr>
+            {% if intervention.typeIntervention.value == 'livraison_toner' %}
+            <tr>
+                <th>Mouvement de stock</th>
+                <td>{{ intervention.stockApplique ? 'Appliqué (stock entreprise débité, stock site crédité)' : 'En attente de clôture' }}</td>
+            </tr>
+            {% endif %}
         </tbody>
     </table>
+
+    {% if intervention.lignes|length > 0 %}
+    <h2 class="h5 mt-4">Pièces à livrer</h2>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Pièce</th>
+                <th>Référence</th>
+                <th>Quantité</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in intervention.lignes %}
+            <tr>
+                <td>{{ ligne.piece.designation }}</td>
+                <td>{{ ligne.piece.reference }}</td>
+                <td>{{ ligne.quantite }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
 
     <a href="{{ path('app_intervention_index') }}">back to list</a>
 

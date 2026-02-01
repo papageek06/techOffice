@@ -1,0 +1,304 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Configuration du contrat - {{ contrat.reference }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-gear"></i> Configuration du contrat
+            </h1>
+            <p class="text-muted mb-0">
+                <strong>{{ contrat.reference }}</strong> - {{ contrat.client.nom }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_contrat_show', {'id': contrat.id}) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour au contrat
+            </a>
+        </div>
+    </div>
+
+    {# Messages flash #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="row g-4">
+        {# Onglets de configuration #}
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="lignes-tab" data-bs-toggle="tab" data-bs-target="#lignes" type="button" role="tab">
+                        <i class="bi bi-list-ul"></i> Lignes de contrat
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="affectations-tab" data-bs-toggle="tab" data-bs-target="#affectations" type="button" role="tab">
+                        <i class="bi bi-printer"></i> Affectations matériel
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="compteurs-tab" data-bs-toggle="tab" data-bs-target="#compteurs" type="button" role="tab">
+                        <i class="bi bi-calculator"></i> Compteurs de départ
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-4" id="configTabsContent">
+                {# Onglet Lignes de contrat #}
+                <div class="tab-pane fade show active" id="lignes" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lignes de contrat</h5>
+                            <a href="{{ path('app_contrat_ligne_new', {'contrat_id': contrat.id}) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Ajouter une ligne
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if contrat.contratLignes|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Libellé</th>
+                                                <th>Site</th>
+                                                <th>Périodicité</th>
+                                                <th>Prochaine facturation</th>
+                                                <th>Prix fixe</th>
+                                                <th>Statut</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for ligne in contrat.contratLignes %}
+                                                <tr>
+                                                    <td><strong>{{ ligne.libelle }}</strong></td>
+                                                    <td>{{ ligne.site.nomSite }}</td>
+                                                    <td><span class="badge bg-info">{{ ligne.periodicite.value }}</span></td>
+                                                    <td>{{ ligne.prochaineFacturation|date('d/m/Y') }}</td>
+                                                    <td>{{ ligne.prixFixe ? ligne.prixFixe|number_format(2, ',', ' ') ~ ' €' : '-' }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{{ ligne.actif ? 'success' : 'secondary' }}">
+                                                            {{ ligne.actif ? 'Actif' : 'Inactif' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a href="{{ path('app_contrat_ligne_show', {'id': ligne.id}) }}" class="btn btn-outline-primary" title="Voir">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                            <a href="{{ path('app_contrat_ligne_edit', {'id': ligne.id}) }}" class="btn btn-outline-secondary" title="Modifier">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> Aucune ligne de contrat. 
+                                    <a href="{{ path('app_contrat_ligne_new', {'contrat_id': contrat.id}) }}" class="alert-link">Créer la première ligne</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Onglet Affectations matériel #}
+                <div class="tab-pane fade" id="affectations" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-printer"></i> Affectations matériel</h5>
+                            <a href="{{ path('app_affectation_materiel_new') }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Ajouter une affectation
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% set affectations = [] %}
+                            {% for ligne in contrat.contratLignes %}
+                                {% for affectation in ligne.affectationsMateriel %}
+                                    {% set affectations = affectations|merge([affectation]) %}
+                                {% endfor %}
+                            {% endfor %}
+                            
+                            {% if affectations|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Ligne de contrat</th>
+                                                <th>Imprimante</th>
+                                                <th>Date début</th>
+                                                <th>Date fin</th>
+                                                <th>Type</th>
+                                                <th>Statut</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for affectation in affectations %}
+                                                <tr>
+                                                    <td>{{ affectation.contratLigne.libelle }}</td>
+                                                    <td>
+                                                        <strong>{{ affectation.imprimante.numeroSerie }}</strong><br>
+                                                        <small class="text-muted">{{ affectation.imprimante.modele.referenceModele }}</small>
+                                                    </td>
+                                                    <td>{{ affectation.dateDebut|date('d/m/Y H:i') }}</td>
+                                                    <td>
+                                                        {% if affectation.dateFin %}
+                                                            {{ affectation.dateFin|date('d/m/Y H:i') }}
+                                                        {% else %}
+                                                            <span class="text-muted">En cours</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td><span class="badge bg-info">{{ affectation.typeAffectation.value }}</span></td>
+                                                    <td>
+                                                        <span class="badge bg-{{ affectation.dateFin ? 'secondary' : 'success' }}">
+                                                            {{ affectation.dateFin ? 'Terminée' : 'Active' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a href="{{ path('app_affectation_materiel_show', {'id': affectation.id}) }}" class="btn btn-outline-primary" title="Voir">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                            <a href="{{ path('app_affectation_materiel_edit', {'id': affectation.id}) }}" class="btn btn-outline-secondary" title="Modifier">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> Aucune affectation matériel. 
+                                    <a href="{{ path('app_affectation_materiel_new') }}" class="alert-link">Créer la première affectation</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Onglet Compteurs de départ #}
+                <div class="tab-pane fade" id="compteurs" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="bi bi-calculator"></i> Compteurs de départ</h5>
+                            <small class="text-muted">Enregistrer les compteurs initiaux pour les machines d'occasion ou en cas de remplacement</small>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{{ path('app_contrat_configure', {'id': contrat.id}) }}" class="mb-4">
+                                <input type="hidden" name="action" value="save_compteur_depart">
+                                <input type="hidden" name="_token" value="{{ csrf_token('configure_contrat_' ~ contrat.id) }}">
+                                
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="imprimante_id" class="form-label">Imprimante</label>
+                                        <select name="imprimante_id" id="imprimante_id" class="form-select" required>
+                                            <option value="">Sélectionner une imprimante</option>
+                                            {% for imprimante in imprimantes %}
+                                                <option value="{{ imprimante.id }}">
+                                                    {{ imprimante.numeroSerie }} - {{ imprimante.modele.referenceModele }} ({{ imprimante.site.nomSite }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <label for="date_releve" class="form-label">Date du relevé</label>
+                                        <input type="date" name="date_releve" id="date_releve" class="form-control" 
+                                               value="{{ contrat.dateDebut|date('Y-m-d') }}" required>
+                                        <small class="form-text text-muted">Date à laquelle le compteur a été relevé</small>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <label for="compteur_noir" class="form-label">Compteur noir</label>
+                                        <input type="number" name="compteur_noir" id="compteur_noir" class="form-control" 
+                                               min="0" required>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <label for="compteur_couleur" class="form-label">Compteur couleur (optionnel)</label>
+                                        <input type="number" name="compteur_couleur" id="compteur_couleur" class="form-control" 
+                                               min="0">
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-save"></i> Enregistrer le compteur de départ
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <hr>
+                            
+                            <h6>Compteurs de départ enregistrés</h6>
+                            {% set imprimantesAvecReleves = [] %}
+                            {% for imprimante in imprimantes %}
+                                {% set releves = imprimante.relevesCompteur|sort((a, b) => b.dateReleve <=> a.dateReleve) %}
+                                {% if releves|length > 0 %}
+                                    {% set imprimantesAvecReleves = imprimantesAvecReleves|merge([{'imprimante': imprimante, 'releve': releves[0]}]) %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if imprimantesAvecReleves|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Imprimante</th>
+                                                <th>Date relevé</th>
+                                                <th class="text-end">Compteur noir</th>
+                                                <th class="text-end">Compteur couleur</th>
+                                                <th>Source</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in imprimantesAvecReleves %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ item.imprimante.numeroSerie }}</strong><br>
+                                                        <small class="text-muted">{{ item.imprimante.modele.referenceModele }}</small>
+                                                    </td>
+                                                    <td>{{ item.releve.dateReleve|date('d/m/Y') }}</td>
+                                                    <td class="text-end">{{ item.releve.compteurNoir|number_format(0, ',', ' ') }}</td>
+                                                    <td class="text-end">
+                                                        {% if item.releve.compteurCouleur %}
+                                                            {{ item.releve.compteurCouleur|number_format(0, ',', ' ') }}
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td><small class="badge bg-secondary">{{ item.releve.source }}</small></td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> Aucun compteur de départ enregistré pour les imprimantes de ce contrat.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

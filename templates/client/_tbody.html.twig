@@ -1,0 +1,15 @@
+{% for client in clients %}
+    <tr>
+        <td>{{ client.id }}</td>
+        <td>{{ client.nom }}</td>
+        <td>{{ client.actif ? 'Oui' : 'Non' }}</td>
+        <td>
+            <a href="{{ path('app_client_show', {id: client.id}) }}">Voir</a>
+            <a href="{{ path('app_client_edit', {id: client.id}) }}">Modifier</a>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td colspan="4" class="text-center text-muted">Aucun client trouvé.</td>
+    </tr>
+{% endfor %}

@@ -85,9 +85,63 @@ final class FacturationPeriodeController extends AbstractController
         }
 
         $facturationPeriode->setStatut(\App\Enum\StatutFacturation::VALIDE);
+        
+        // Mettre à jour la prochaine facturation de la ligne de contrat
+        // La nouvelle prochaine facturation = date de fin de la période + période (au 1er jour du mois)
+        $contratLigne = $facturationPeriode->getContratLigne();
+        $dateFinPeriode = $facturationPeriode->getDateFin();
+        $nouvelleProchaineFacturation = $this->calculateProchaineFacturation($dateFinPeriode, $contratLigne->getPeriodicite());
+        $contratLigne->setProchaineFacturation($nouvelleProchaineFacturation);
+        
         $entityManager->flush();
 
-        $this->addFlash('success', 'Période validée avec succès');
+        $this->addFlash('success', 'Période validée avec succès. La prochaine facturation a été mise à jour.');
+
+        return $this->redirectToRoute('app_facturation_periode_show', ['id' => $facturationPeriode->getId()]);
+    }
+
+    /**
+     * Calcule la prochaine date de facturation après une période
+     * 
+     * Exemple : si dateFinPeriode = 31/01/2026 et périodicité = TRIMESTRIEL
+     * Alors nouvelle prochaineFacturation = 01/05/2026 (3 mois après, 1er jour du mois)
+     */
+    private function calculateProchaineFacturation(\DateTimeImmutable $dateFinPeriode, \App\Enum\Periodicite $periodicite): \DateTimeImmutable
+    {
+        // Avancer de la période depuis la date de fin
+        $prochaineFacturation = match ($periodicite) {
+            \App\Enum\Periodicite::MENSUEL => $dateFinPeriode->modify('+1 month'),
+            \App\Enum\Periodicite::TRIMESTRIEL => $dateFinPeriode->modify('+3 months'),
+            \App\Enum\Periodicite::SEMESTRIEL => $dateFinPeriode->modify('+6 months'),
+            \App\Enum\Periodicite::ANNUEL => $dateFinPeriode->modify('+1 year'),
+        };
+        
+        // S'assurer que c'est le 1er jour du mois
+        return $prochaineFacturation->modify('first day of this month');
+    }
+
+    #[Route('/{id}/invoice', name: 'app_facturation_periode_invoice', methods: ['POST'])]
+    public function invoice(
+        FacturationPeriode $facturationPeriode,
+        EntityManagerInterface $entityManager,
+        Request $request
+    ): Response {
+        if (!$this->isCsrfTokenValid('invoice'.$facturationPeriode->getId(), $request->getPayload()->getString('_token'))) {
+            throw $this->createAccessDeniedException('Token invalide');
+        }
+
+        $facturationPeriode->setStatut(\App\Enum\StatutFacturation::FACTURE);
+        
+        // Mettre à jour la prochaine facturation de la ligne de contrat
+        // La nouvelle prochaine facturation = date de fin de la période + période (au 1er jour du mois)
+        $contratLigne = $facturationPeriode->getContratLigne();
+        $dateFinPeriode = $facturationPeriode->getDateFin();
+        $nouvelleProchaineFacturation = $this->calculateProchaineFacturation($dateFinPeriode, $contratLigne->getPeriodicite());
+        $contratLigne->setProchaineFacturation($nouvelleProchaineFacturation);
+        
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Période marquée comme facturée. La prochaine facturation a été mise à jour.');
 
         return $this->redirectToRoute('app_facturation_periode_show', ['id' => $facturationPeriode->getId()]);
     }

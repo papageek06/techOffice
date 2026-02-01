@@ -10,6 +10,8 @@ use App\Repository\FacturationPeriodeRepository;
 use App\Service\BillingCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -100,6 +102,37 @@ final class ComptabiliteController extends AbstractController
         ]);
     }
 
+    #[Route('/contrats/{id}', name: 'app_comptabilite_contrat_show', methods: ['GET'])]
+    #[IsGranted(new Expression("is_granted('ROLE_COMPTABLE') or is_granted('ROLE_ADMIN')"))]
+    public function contratShow(Contrat $contrat, BillingCalculator $billingCalculator): Response
+    {
+        // Préparer les données de facturation pour chaque ligne de contrat
+        $lignesAvecFacturation = [];
+        foreach ($contrat->getContratLignes() as $ligne) {
+            $periodesAvecMontants = [];
+            foreach ($ligne->getFacturationPeriodes() as $periode) {
+                $calcul = $billingCalculator->calculateForPeriod($periode);
+                $periodesAvecMontants[] = [
+                    'periode' => $periode,
+                    'montant' => $calcul['montant'],
+                    'pagesNoir' => $calcul['pagesNoir'],
+                    'pagesCouleur' => $calcul['pagesCouleur'],
+                    'details' => $calcul['details'],
+                ];
+            }
+            
+            $lignesAvecFacturation[] = [
+                'ligne' => $ligne,
+                'periodes' => $periodesAvecMontants,
+            ];
+        }
+
+        return $this->render('contrat/show.html.twig', [
+            'contrat' => $contrat,
+            'lignesAvecFacturation' => $lignesAvecFacturation,
+        ]);
+    }
+
     #[Route('/periodes', name: 'app_comptabilite_periodes', methods: ['GET'])]
     #[IsGranted(new Expression("is_granted('ROLE_COMPTABLE') or is_granted('ROLE_ADMIN')"))]
     public function periodes(
@@ -143,6 +176,78 @@ final class ComptabiliteController extends AbstractController
         return $this->render('comptabilite/periode_show.html.twig', [
             'periode' => $facturationPeriode,
             'calcul' => $calcul,
+        ]);
+    }
+
+    /**
+     * Route AJAX pour récupérer les détails d'une période avec les compteurs des imprimantes
+     */
+    #[Route('/periode/{id}/details-ajax', name: 'app_comptabilite_periode_details_ajax', methods: ['GET'])]
+    #[IsGranted(new Expression("is_granted('ROLE_COMPTABLE') or is_granted('ROLE_ADMIN')"))]
+    public function periodeDetailsAjax(
+        FacturationPeriode $facturationPeriode,
+        BillingCalculator $billingCalculator
+    ): JsonResponse {
+        $calcul = $billingCalculator->calculateForPeriod($facturationPeriode);
+        $contratLigne = $facturationPeriode->getContratLigne();
+
+        // Récupérer les compteurs de facturation avec les imprimantes
+        $compteursDetails = [];
+        foreach ($facturationPeriode->getFacturationCompteurs() as $compteur) {
+            $affectation = $compteur->getAffectationMateriel();
+            $imprimante = $affectation->getImprimante();
+            
+            $compteursDetails[] = [
+                'imprimante' => [
+                    'id' => $imprimante->getId(),
+                    'numeroSerie' => $imprimante->getNumeroSerie(),
+                    'modele' => $imprimante->getModele()->getReferenceModele(),
+                    'adresseIp' => $imprimante->getAdresseIp(),
+                ],
+                'compteurs' => [
+                    'debutNoir' => $compteur->getCompteurDebutNoir(),
+                    'finNoir' => $compteur->getCompteurFinNoir(),
+                    'pagesNoir' => $compteur->getPagesNoir(),
+                    'debutCouleur' => $compteur->getCompteurDebutCouleur(),
+                    'finCouleur' => $compteur->getCompteurFinCouleur(),
+                    'pagesCouleur' => $compteur->getPagesCouleur(),
+                    'sourceDebut' => $compteur->getSourceDebut()->value,
+                    'sourceFin' => $compteur->getSourceFin()->value,
+                    'compteurFinEstime' => $compteur->isCompteurFinEstime(),
+                    'dateReleveFin' => $compteur->getDateReleveFin()?->format('d/m/Y'),
+                ],
+                'affectation' => [
+                    'dateDebut' => $affectation->getDateDebut()->format('d/m/Y H:i'),
+                    'dateFin' => $affectation->getDateFin()?->format('d/m/Y H:i'),
+                    'type' => $affectation->getTypeAffectation()->value,
+                ],
+            ];
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'periode' => [
+                'id' => $facturationPeriode->getId(),
+                'dateDebut' => $facturationPeriode->getDateDebut()->format('d/m/Y'),
+                'dateFin' => $facturationPeriode->getDateFin()->format('d/m/Y'),
+                'statut' => $facturationPeriode->getStatut()->value,
+            ],
+            'calcul' => [
+                'montant' => $calcul['montant'],
+                'pagesNoir' => $calcul['pagesNoir'],
+                'pagesCouleur' => $calcul['pagesCouleur'],
+                'details' => $calcul['details'],
+            ],
+            'contratLigne' => [
+                'id' => $contratLigne->getId(),
+                'libelle' => $contratLigne->getLibelle(),
+                'prixFixe' => $contratLigne->getPrixFixe(),
+                'prixPageNoir' => $contratLigne->getPrixPageNoir(),
+                'prixPageCouleur' => $contratLigne->getPrixPageCouleur(),
+                'pagesInclusesNoir' => $contratLigne->getPagesInclusesNoir(),
+                'pagesInclusesCouleur' => $contratLigne->getPagesInclusesCouleur(),
+            ],
+            'compteurs' => $compteursDetails,
         ]);
     }
 }

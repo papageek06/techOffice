@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\StatutIntervention;
 use App\Enum\TypeIntervention;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -46,9 +48,18 @@ class Intervention
     #[ORM\Column(options: ['default' => true])]
     private bool $facturable = true;
 
+    /** True une fois les mouvements de stock appliqués à la clôture (livraison toner). */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $stockApplique = false;
+
+    /** @var Collection<int, InterventionLigne> */
+    #[ORM\OneToMany(mappedBy: 'intervention', targetEntity: InterventionLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $lignes;
+
     public function __construct()
     {
         $this->dateCreation = new \DateTimeImmutable();
+        $this->lignes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -163,6 +174,40 @@ class Intervention
     public function setFacturable(bool $facturable): self
     {
         $this->facturable = $facturable;
+        return $this;
+    }
+
+    public function isStockApplique(): bool
+    {
+        return $this->stockApplique;
+    }
+
+    public function setStockApplique(bool $stockApplique): self
+    {
+        $this->stockApplique = $stockApplique;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, InterventionLigne>
+     */
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
+
+    public function addLigne(InterventionLigne $ligne): self
+    {
+        if (!$this->lignes->contains($ligne)) {
+            $this->lignes->add($ligne);
+            $ligne->setIntervention($this);
+        }
+        return $this;
+    }
+
+    public function removeLigne(InterventionLigne $ligne): self
+    {
+        $this->lignes->removeElement($ligne);
         return $this;
     }
 }

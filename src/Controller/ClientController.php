@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Form\ClientType;
+use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -13,15 +15,35 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/client')]
 final class ClientController extends AbstractController
 {
+    private const PER_PAGE = 10;
+
     #[Route(name: 'app_client_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, ClientRepository $clientRepository): Response
     {
-        $clients = $entityManager
-            ->getRepository(Client::class)
-            ->findAll();
+        $page = max(1, (int) $request->query->get('page', 1));
+        $q = $request->query->get('q', '');
+        $result = $clientRepository->findPaginated($q === '' ? null : $q, $page, self::PER_PAGE);
+        $clients = $result['items'];
+        $total = $result['total'];
+        $totalPages = $total > 0 ? (int) ceil($total / self::PER_PAGE) : 1;
+
+        $pagination = [
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'total' => $total,
+            'perPage' => self::PER_PAGE,
+            'q' => $q,
+        ];
+
+        if ($request->isXmlHttpRequest()) {
+            $tbody = $this->renderView('client/_tbody.html.twig', ['clients' => $clients]);
+            $paginationHtml = $this->renderView('client/_pagination.html.twig', ['pagination' => $pagination]);
+            return new JsonResponse(['tbody' => $tbody, 'pagination' => $paginationHtml]);
+        }
 
         return $this->render('client/index.html.twig', [
             'clients' => $clients,
+            'pagination' => $pagination,
         ]);
     }
 

@@ -5,14 +5,6 @@
         </div>
 
         <div class="col-12 col-md-6">
-            {{ form_row(form.dateCreation) }}
-        </div>
-
-        <div class="col-12 col-md-6">
-            {{ form_row(form.dateIntervention) }}
-        </div>
-
-        <div class="col-12 col-md-6">
             {{ form_row(form.typeIntervention) }}
         </div>
 
@@ -36,8 +28,48 @@
             {{ form_row(form.facturable) }}
         </div>
 
+        {% if form.utilisateur is defined %}
         <div class="col-12">
             {{ form_row(form.utilisateur) }}
+        </div>
+        {% endif %}
+    </div>
+
+    {# Pièces (livrées / installées) #}
+    <div class="col-12 mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>{{ form_label(form.lignes) }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary add-intervention-ligne">
+                    <i class="bi bi-plus-lg"></i> Ajouter une pièce
+                </button>
+            </div>
+            <div class="card-body">
+                {{ form_help(form.lignes) }}
+                {% if stock_entreprise is defined and stock_entreprise is not empty %}
+                <div class="alert alert-info small mb-3">
+                    <strong>Stock entreprise (toner / bac récup.) :</strong>
+                    <ul class="mb-0 mt-1">
+                        {% for pieceId, info in stock_entreprise %}
+                        <li>{{ info.designation }} ({{ info.reference }}) : <strong>{{ info.quantite }}</strong> en stock</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <div id="intervention-lignes" data-prototype="{{ form_widget(form.lignes.vars.prototype)|e('html_attr') }}">
+                    {% for ligne in form.lignes %}
+                    <div class="row g-2 mb-2 intervention-ligne-row">
+                        <div class="col-md-6">{{ form_row(ligne.piece, {'label': false}) }}</div>
+                        <div class="col-md-3">{{ form_row(ligne.quantite, {'label': false}) }}</div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-ligne">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -50,3 +82,34 @@
         </a>
     </div>
 {{ form_end(form) }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('intervention-lignes');
+    if (!container) return;
+    const addBtn = document.querySelector('.add-intervention-ligne');
+    const prototype = container.getAttribute('data-prototype');
+    let index = container.querySelectorAll('.intervention-ligne-row').length;
+
+    if (addBtn && prototype) {
+        addBtn.addEventListener('click', function() {
+            const newRow = document.createElement('div');
+            newRow.className = 'row g-2 mb-2 intervention-ligne-row';
+            newRow.innerHTML = prototype.replace(/__name__/g, index);
+            const colBtn = document.createElement('div');
+            colBtn.className = 'col-md-3';
+            colBtn.innerHTML = '<button type="button" class="btn btn-sm btn-outline-danger remove-ligne"><i class="bi bi-trash"></i></button>';
+            newRow.appendChild(colBtn);
+            container.appendChild(newRow);
+            index++;
+            colBtn.querySelector('.remove-ligne').addEventListener('click', function() { newRow.remove(); });
+        });
+    }
+
+    container.querySelectorAll('.remove-ligne').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            this.closest('.intervention-ligne-row').remove();
+        });
+    });
+});
+</script>

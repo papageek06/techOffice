@@ -33,6 +33,10 @@ class StockItem
     #[ORM\Column(options: ['default' => 0])]
     private int $quantite = 0;
 
+    /** Quantité maximum à conserver en stock (pour compléter le stock jusqu'à ce niveau). */
+    #[ORM\Column(nullable: true)]
+    private ?int $quantiteMax = null;
+
     #[ORM\Column(nullable: true)]
     private ?int $seuilAlerte = null;
 
@@ -86,6 +90,17 @@ class StockItem
     public function setQuantite(int $quantite): self
     {
         $this->quantite = $quantite;
+        return $this;
+    }
+
+    public function getQuantiteMax(): ?int
+    {
+        return $this->quantiteMax;
+    }
+
+    public function setQuantiteMax(?int $quantiteMax): self
+    {
+        $this->quantiteMax = $quantiteMax;
         return $this;
     }
 

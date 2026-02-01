@@ -9,6 +9,8 @@ use App\Entity\Modele;
 use App\Entity\Imprimante;
 use App\Entity\ReleveCompteur;
 use App\Entity\EtatConsommable;
+use App\Entity\StockLocation;
+use App\Enum\StockLocationType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,7 +20,10 @@ class ImportCsvService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private ?LoggerInterface $logger = null
+        private ?LoggerInterface $logger = null,
+        private ?CounterUpdateService $counterUpdateService = null,
+        private ?InterventionTonerService $interventionTonerService = null,
+        private ?ReglerStockEntrepriseService $reglerStockEntrepriseService = null
     ) {
     }
 
@@ -149,6 +154,9 @@ class ImportCsvService
         // 2. Trouver ou créer le Site avec le nom du CUSTOMER
         $site = $this->findOrCreateSite($client, $nomSite);
 
+        // 2.1. Créer automatiquement un stock CLIENT pour le site s'il n'existe pas
+        $this->findOrCreateClientStock($site);
+
         // 3. Trouver ou créer le Fabricant (BRAND = RICOH, etc.)
         $fabricant = $this->findOrCreateFabricant(trim($data['BRAND']));
 
@@ -171,7 +179,37 @@ class ImportCsvService
         $this->createReleveCompteur($imprimante, $data);
 
         // 7. Créer l'EtatConsommable
-        $this->createEtatConsommable($imprimante, $data);
+        $etatConsommable = $this->createEtatConsommable($imprimante, $data);
+
+        // 8. Si un rapport CSV a été traité et qu'un niveau d'encre est <= 20 %, vérifier le stock du site
+        //    et créer une intervention "livraison toner" si le stock n'a pas le toner (bonne couleur) en quantité > 0
+        if ($etatConsommable && $this->interventionTonerService) {
+            try {
+                $this->interventionTonerService->checkAndCreateInterventionLivraisonToner($imprimante, $etatConsommable);
+            } catch (\Exception $e) {
+                if ($this->logger) {
+                    $this->logger->error('Erreur lors de la vérification intervention livraison toner', [
+                        'imprimante_id' => $imprimante->getId(),
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        // 9. Pour chaque site (ligne traitée), régler le stock entreprise : pièces du modèle de l'imprimante
+        //    avec quantite = 0 par défaut et quantiteMax = 1
+        if ($this->reglerStockEntrepriseService) {
+            try {
+                $this->reglerStockEntrepriseService->reglerStockEntreprisePourModele($imprimante->getModele());
+            } catch (\Exception $e) {
+                if ($this->logger) {
+                    $this->logger->error('Erreur lors du réglage du stock entreprise', [
+                        'modele_id' => $imprimante->getModele()->getId(),
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
     }
 
     private function resetEntityManager(): void
@@ -222,6 +260,37 @@ class ImportCsvService
         }
 
         return $site;
+    }
+
+    /**
+     * Trouve ou crée un stock CLIENT pour un site
+     * Créé automatiquement lors de la réception d'un rapport CSV
+     */
+    private function findOrCreateClientStock(Site $site): StockLocation
+    {
+        $em = $this->getEntityManager();
+        $stockLocationRepository = $em->getRepository(StockLocation::class);
+        
+        // Si le site n'a pas encore d'ID, on doit d'abord le persister
+        if ($site->getId() === null) {
+            $em->flush(); // Flush pour obtenir l'ID du site
+        }
+        
+        // Chercher un stock CLIENT existant pour ce site
+        $stockLocation = $stockLocationRepository->findClientStockForSite($site);
+        
+        if (!$stockLocation) {
+            // Créer un nouveau stock CLIENT pour le site
+            $stockLocation = new StockLocation();
+            $stockLocation->setSite($site);
+            $stockLocation->setType(StockLocationType::CLIENT);
+            // Nom du stock basé sur le nom du site
+            $stockLocation->setNomStock('Stock ' . $site->getNomSite());
+            $stockLocation->setActif(true);
+            $em->persist($stockLocation);
+        }
+        
+        return $stockLocation;
     }
 
     private function findOrCreateFabricant(string $nom): Fabricant
@@ -333,6 +402,23 @@ class ImportCsvService
             $existing->setCompteurFax($nouveauFax);
             $existing->setDateReceptionRapport($dateReceptionRapport);
             $existing->setSource('csv');
+            
+            $em->flush();
+            
+            // Mettre à jour les compteurs de facturation si le service est disponible
+            if ($this->counterUpdateService) {
+                try {
+                    $this->counterUpdateService->updateCountersForReleve($existing);
+                } catch (\Exception $e) {
+                    if ($this->logger) {
+                        $this->logger->error('Erreur lors de la mise à jour des compteurs de facturation', [
+                            'releve_id' => $existing->getId(),
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
             return;
         }
 
@@ -350,15 +436,34 @@ class ImportCsvService
         $releve->setSource('csv');
 
         $em->persist($releve);
+        $em->flush();
+        
+        // Mettre à jour les compteurs de facturation si le service est disponible
+        if ($this->counterUpdateService) {
+            try {
+                $this->counterUpdateService->updateCountersForReleve($releve);
+            } catch (\Exception $e) {
+                if ($this->logger) {
+                    $this->logger->error('Erreur lors de la mise à jour des compteurs de facturation', [
+                        'releve_id' => $releve->getId(),
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
     }
 
-    private function createEtatConsommable(Imprimante $imprimante, array $data): void
+    /**
+     * Crée ou met à jour l'état consommable (niveaux d'encre) à partir des données CSV.
+     * Retourne l'état consommable utilisé pour déclencher éventuellement une intervention livraison toner.
+     */
+    private function createEtatConsommable(Imprimante $imprimante, array $data): ?EtatConsommable
     {
         // LAST_SCAN_DATE = Date réelle du scan de l'imprimante (date de capture)
         $dateCapture = $this->parseDate($data['LAST_SCAN_DATE'] ?? null);
         if (!$dateCapture) {
             // Si LAST_SCAN_DATE n'est pas disponible, on ignore cette ligne
-            return;
+            return null;
         }
 
         // READING_DATE = Date de réception du rapport CSV (conservée pour information mais non utilisée comme clé)
@@ -425,8 +530,8 @@ class ImportCsvService
             if ($dateEpuisementJaune !== null) {
                 $etat->setDateEpuisementJaune($dateEpuisementJaune);
             }
-            
-            return;
+
+            return $etat;
         }
 
         // Créer un nouvel état
@@ -449,6 +554,8 @@ class ImportCsvService
         $etat->setDateEpuisementJaune($this->parseDate($data['YELLOW_DEPLETION_DATE'] ?? null));
 
         $em->persist($etat);
+
+        return $etat;
     }
 
     private function parseDate(?string $dateStr): ?\DateTimeImmutable

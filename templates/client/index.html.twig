@@ -1,37 +1,111 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Client index{% endblock %}
+{% block title %}Clients{% endblock %}
 
 {% block body %}
-    <h1>Client index</h1>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="h2 mb-0"><i class="bi bi-building"></i> Clients</h1>
+        <a href="{{ path('app_client_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nouveau client
+        </a>
+    </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Nom</th>
-                <th>Actif</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for client in clients %}
-            <tr>
-                <td>{{ client.id }}</td>
-                <td>{{ client.nom }}</td>
-                <td>{{ client.actif ? 'Yes' : 'No' }}</td>
-                <td>
-                    <a href="{{ path('app_client_show', {'id': client.id}) }}">show</a>
-                    <a href="{{ path('app_client_edit', {'id': client.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="4">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6 col-lg-4">
+                    <label for="client-search" class="form-label visually-hidden">Rechercher un client</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search"
+                               id="client-search"
+                               class="form-control"
+                               placeholder="Rechercher par nom..."
+                               value="{{ pagination.q }}"
+                               autocomplete="off">
+                    </div>
+                    <div class="form-text">Recherche sur l’ensemble des clients en base de données.</div>
+                </div>
+            </div>
 
-    <a href="{{ path('app_client_new') }}">Create new</a>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Id</th>
+                            <th>Nom</th>
+                            <th>Actif</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="client-tbody">
+                        {% include 'client/_tbody.html.twig' %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="client-pagination">
+                {% include 'client/_pagination.html.twig' %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+(function() {
+    const searchInput = document.getElementById('client-search');
+    const tbody = document.getElementById('client-tbody');
+    const paginationContainer = document.getElementById('client-pagination');
+    if (!searchInput || !tbody || !paginationContainer) return;
+
+    let debounceTimer;
+    const debounceMs = 300;
+
+    function getCurrentPage() {
+        const match = document.querySelector('#client-pagination .pagination .page-item.active .page-link');
+        if (match && match.href) {
+            const u = new URL(match.href);
+            const p = u.searchParams.get('page');
+            return p ? parseInt(p, 10) : 1;
+        }
+        return 1;
+    }
+
+    function loadClients(page, q) {
+        const url = new URL('{{ path('app_client_index') }}', window.location.origin);
+        url.searchParams.set('page', String(page || 1));
+        if (q) url.searchParams.set('q', q);
+
+        fetch(url.toString(), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                tbody.innerHTML = data.tbody || '';
+                paginationContainer.innerHTML = data.pagination || '';
+            })
+            .catch(function() {
+                window.location.href = url.toString();
+            });
+    }
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        debounceTimer = setTimeout(function() {
+            loadClients(1, q);
+        }, debounceMs);
+    });
+
+    document.getElementById('client-pagination').addEventListener('click', function(e) {
+        const link = e.target.closest('a.page-link');
+        if (!link || link.getAttribute('href') === '#') return;
+        e.preventDefault();
+        const url = new URL(link.href);
+        const page = url.searchParams.get('page');
+        const q = url.searchParams.get('q') || '';
+        if (page) loadClients(parseInt(page, 10), q);
+    });
+})();
+    </script>
 {% endblock %}

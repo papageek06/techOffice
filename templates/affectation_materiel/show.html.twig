@@ -1,0 +1,191 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Affectation matériel{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1>
+                <i class="bi bi-printer"></i> Affectation matériel
+            </h1>
+            <p class="text-muted mb-0">
+                <span class="badge bg-{{ affectation_materiel.dateFin ? 'secondary' : 'success' }}">
+                    {{ affectation_materiel.dateFin ? 'Terminée' : 'Active' }}
+                </span>
+                <span class="badge bg-info ms-2">{{ affectation_materiel.typeAffectation.value }}</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_affectation_materiel_edit', {'id': affectation_materiel.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <a href="{{ path('app_affectation_materiel_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Ligne de contrat</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_contrat_ligne_show', {'id': affectation_materiel.contratLigne.id}) }}" class="text-decoration-none">
+                                <strong>{{ affectation_materiel.contratLigne.libelle }}</strong>
+                            </a>
+                            <br>
+                            <small class="text-muted">
+                                Contrat: {{ affectation_materiel.contratLigne.contrat.reference }} - 
+                                Site: {{ affectation_materiel.contratLigne.site.nomSite }}
+                            </small>
+                        </dd>
+
+                        <dt class="col-sm-4">Imprimante</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ path('app_imprimante_show', {'id': affectation_materiel.imprimante.id}) }}" class="text-decoration-none">
+                                <strong>{{ affectation_materiel.imprimante.numeroSerie }}</strong>
+                            </a>
+                            <br>
+                            <small class="text-muted">
+                                {{ affectation_materiel.imprimante.modele.fabricant.nomFabricant }} 
+                                {{ affectation_materiel.imprimante.modele.referenceModele }}
+                                {% if affectation_materiel.imprimante.adresseIp %}
+                                    - IP: {{ affectation_materiel.imprimante.adresseIp }}
+                                {% endif %}
+                            </small>
+                        </dd>
+
+                        <dt class="col-sm-4">Date de début</dt>
+                        <dd class="col-sm-8">{{ affectation_materiel.dateDebut|date('d/m/Y H:i') }}</dd>
+
+                        <dt class="col-sm-4">Date de fin</dt>
+                        <dd class="col-sm-8">
+                            {% if affectation_materiel.dateFin %}
+                                {{ affectation_materiel.dateFin|date('d/m/Y H:i') }}
+                            {% else %}
+                                <span class="text-muted">En cours</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Type d'affectation</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info">{{ affectation_materiel.typeAffectation.value }}</span>
+                        </dd>
+
+                        {% if affectation_materiel.reason %}
+                            <dt class="col-sm-4">Raison</dt>
+                            <dd class="col-sm-8">{{ affectation_materiel.reason|nl2br }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-4">Créée le</dt>
+                        <dd class="col-sm-8">{{ affectation_materiel.createdAt|date('d/m/Y H:i') }}</dd>
+
+                        <dt class="col-sm-4">Modifiée le</dt>
+                        <dd class="col-sm-8">{{ affectation_materiel.updatedAt|date('d/m/Y H:i') }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if affectation_materiel.facturationCompteurs|length > 0 %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-calculator"></i> Compteurs de facturation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Période</th>
+                                        <th class="text-end">Début N</th>
+                                        <th class="text-end">Fin N</th>
+                                        <th class="text-end">Pages N</th>
+                                        <th class="text-end">Début C</th>
+                                        <th class="text-end">Fin C</th>
+                                        <th class="text-end">Pages C</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for compteur in affectation_materiel.facturationCompteurs %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{ path('app_comptabilite_periode_show', {'id': compteur.facturationPeriode.id}) }}" class="text-decoration-none">
+                                                    {{ compteur.facturationPeriode.dateDebut|date('d/m/Y') }} → 
+                                                    {{ compteur.facturationPeriode.dateFin|date('d/m/Y') }}
+                                                </a>
+                                                <br>
+                                                <small class="text-muted">
+                                                    {{ compteur.facturationPeriode.statut.value }}
+                                                </small>
+                                            </td>
+                                            <td class="text-end">{{ compteur.compteurDebutNoir|number_format(0, ',', ' ') }}</td>
+                                            <td class="text-end">
+                                                {{ compteur.compteurFinNoir|number_format(0, ',', ' ') }}
+                                                {% if compteur.compteurFinEstime %}
+                                                    <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end"><strong class="text-primary">{{ compteur.pagesNoir|number_format(0, ',', ' ') }}</strong></td>
+                                            <td class="text-end">
+                                                {% if compteur.compteurDebutCouleur %}
+                                                    {{ compteur.compteurDebutCouleur|number_format(0, ',', ' ') }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if compteur.compteurFinCouleur %}
+                                                    {{ compteur.compteurFinCouleur|number_format(0, ',', ' ') }}
+                                                    {% if compteur.compteurFinEstime %}
+                                                        <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end"><strong class="text-info">{{ compteur.pagesCouleur|number_format(0, ',', ' ') }}</strong></td>
+                                            <td>
+                                                {% if compteur.compteurFinEstime %}
+                                                    <span class="badge bg-warning" title="Compteur de fin estimé">Estimé</span>
+                                                {% else %}
+                                                    <span class="badge bg-success" title="Compteur de fin réel">Réel</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('app_affectation_materiel_edit', {'id': affectation_materiel.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{{ path('app_affectation_materiel_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-list"></i> Liste des affectations
+                        </a>
+                        {{ include('affectation_materiel/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

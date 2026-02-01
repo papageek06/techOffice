@@ -31,3 +31,8 @@ services:
     # En production, remplacer MockEmailSender par une implémentation réelle (Symfony Mailer, etc.)
     App\Service\EmailSenderInterface:
         class: App\Service\MockEmailSender
+
+    # Doctrine : appliquer les mouvements de stock à la clôture d'une intervention livraison toner
+    App\EventListener\InterventionStockListener:
+        tags:
+            - { name: doctrine.event_subscriber }

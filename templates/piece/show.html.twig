@@ -73,12 +73,58 @@
             </div>
 
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Compatibilités avec les modèles</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#addModeleForm" aria-expanded="false">
+                        <i class="bi bi-plus-circle"></i> Ajouter un modèle
+                    </button>
                 </div>
+                
+                {# Formulaire d'ajout de correspondance #}
+                <div class="collapse" id="addModeleForm">
+                    <div class="card-body border-bottom">
+                        <form id="addModeleFormElement">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="modeleSelect" class="form-label">Modèle d'imprimante</label>
+                                    <select class="form-select" id="modeleSelect" required>
+                                        <option value="">Sélectionner un modèle...</option>
+                                        {% for modele in modeles %}
+                                            <option value="{{ modele.id }}">
+                                                {{ modele.fabricant.nomFabricant }} {{ modele.referenceModele }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="roleSelect" class="form-label">Rôle</label>
+                                    <select class="form-select" id="roleSelect" required>
+                                        <option value="">Sélectionner un rôle...</option>
+                                        <option value="TONER_K">Toner Noir (K)</option>
+                                        <option value="TONER_C">Toner Cyan (C)</option>
+                                        <option value="TONER_M">Toner Magenta (M)</option>
+                                        <option value="TONER_Y">Toner Jaune (Y)</option>
+                                        <option value="BAC_RECUP">Bac de récupération</option>
+                                        <option value="DRUM">Tambour</option>
+                                        <option value="FUSER">Unité de fusion</option>
+                                        <option value="AUTRE">Autre</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100" id="addModeleBtn">
+                                        <i class="bi bi-check-circle"></i> Ajouter
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="addModeleError" class="alert alert-danger mt-2 d-none" role="alert"></div>
+                            <div id="addModeleSuccess" class="alert alert-success mt-2 d-none" role="alert"></div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card-body p-0">
                     {% if piece.pieceModeles is empty %}
-                        <div class="p-4 text-center text-muted">
+                        <div class="p-4 text-center text-muted" id="emptyMessage">
                             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                             <p class="mb-0">Aucune compatibilité définie</p>
                         </div>
@@ -92,14 +138,14 @@
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="compatibilitesTableBody">
                                     {% for pieceModele in piece.pieceModeles %}
-                                        <tr>
+                                        <tr data-piece-modele-id="{{ pieceModele.id }}">
                                             <td>
                                                 <strong>{{ pieceModele.modele.fabricant.nomFabricant }} {{ pieceModele.modele.referenceModele }}</strong>
                                             </td>
                                             <td>
-                                                <span class="badge bg-info">{{ pieceModele.role.value }}</span>
+                                                <span class="badge bg-info">{{ pieceModele.role.value|replace({'_': ' '}) }}</span>
                                             </td>
                                             <td class="text-end">
                                                 <a href="{{ path('app_piece_modele_show', {'id': pieceModele.id}) }}" class="btn btn-sm btn-outline-primary">
@@ -114,6 +160,190 @@
                     {% endif %}
                 </div>
             </div>
+
+            <script>
+            (function() {
+                const addModeleForm = document.getElementById('addModeleFormElement');
+                const modeleSelect = document.getElementById('modeleSelect');
+                const roleSelect = document.getElementById('roleSelect');
+                const addModeleBtn = document.getElementById('addModeleBtn');
+                const errorDiv = document.getElementById('addModeleError');
+                const successDiv = document.getElementById('addModeleSuccess');
+                let tableBody = document.getElementById('compatibilitesTableBody');
+                const emptyMessage = document.getElementById('emptyMessage');
+                const addUrl = '{{ path('app_piece_add_modele', {'id': piece.id}) }}';
+
+                // Récupérer les modèles déjà associés pour les exclure du sélecteur
+                const existingModeles = new Set();
+                {% for pieceModele in piece.pieceModeles %}
+                    existingModeles.add({{ pieceModele.modele.id }});
+                {% endfor %}
+
+                // Filtrer les options du sélecteur (masquer les modèles déjà associés avec le même rôle)
+                function updateModeleSelect() {
+                    const selectedRole = roleSelect.value;
+                    Array.from(modeleSelect.options).forEach(option => {
+                        if (option.value === '') return;
+                        // Pour l'instant, on laisse tous les modèles disponibles
+                        // On pourrait améliorer en vérifiant les rôles aussi
+                    });
+                }
+
+                roleSelect.addEventListener('change', updateModeleSelect);
+
+                addModeleForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const modeleId = modeleSelect.value;
+                    const role = roleSelect.value;
+
+                    if (!modeleId || !role) {
+                        showError('Veuillez sélectionner un modèle et un rôle');
+                        return;
+                    }
+
+                    // Désactiver le bouton pendant la requête
+                    addModeleBtn.disabled = true;
+                    addModeleBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Ajout...';
+                    hideMessages();
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('modele_id', modeleId);
+                        formData.append('role', role);
+
+                        const response = await fetch(addUrl, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok || !data.success) {
+                            showError(data.error || 'Erreur lors de l\'ajout de la correspondance');
+                            return;
+                        }
+
+                        // Afficher le message de succès
+                        showSuccess('Correspondance ajoutée avec succès !');
+
+                        // Ajouter la nouvelle ligne au tableau
+                        addRowToTable(data.pieceModele);
+
+                        // Masquer le message vide si présent
+                        if (emptyMessage) {
+                            emptyMessage.style.display = 'none';
+                        }
+
+                        // Réinitialiser le formulaire
+                        modeleSelect.value = '';
+                        roleSelect.value = '';
+                        updateModeleSelect();
+
+                        // Masquer le formulaire après 1 seconde
+                        setTimeout(() => {
+                            const collapseElement = document.getElementById('addModeleForm');
+                            if (collapseElement) {
+                                const bsCollapse = bootstrap?.Collapse?.getInstance(collapseElement);
+                                if (bsCollapse) {
+                                    bsCollapse.hide();
+                                } else {
+                                    collapseElement.classList.remove('show');
+                                }
+                            }
+                            hideMessages();
+                        }, 1500);
+
+                    } catch (error) {
+                        console.error('Erreur:', error);
+                        showError('Une erreur est survenue lors de l\'ajout');
+                    } finally {
+                        addModeleBtn.disabled = false;
+                        addModeleBtn.innerHTML = '<i class="bi bi-check-circle"></i> Ajouter';
+                    }
+                });
+
+                function addRowToTable(pieceModele) {
+                    let tbody = tableBody;
+                    
+                    // Créer la table si elle n'existe pas
+                    if (!tbody) {
+                        const cardBody = document.querySelector('.card-body.p-0');
+                        const emptyDiv = cardBody.querySelector('#emptyMessage');
+                        if (emptyDiv) {
+                            emptyDiv.remove();
+                        }
+
+                        const tableHtml = `
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Modèle</th>
+                                            <th>Rôle</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="compatibilitesTableBody"></tbody>
+                                </table>
+                            </div>
+                        `;
+                        cardBody.innerHTML = tableHtml;
+                        tbody = document.getElementById('compatibilitesTableBody');
+                        // Mettre à jour la référence globale
+                        tableBody = tbody;
+                    }
+
+                    // Créer la nouvelle ligne
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-piece-modele-id', pieceModele.id);
+                    const showUrl = '{{ path('app_piece_modele_show', {'id': 0}) }}'.replace('0', pieceModele.id);
+                    row.innerHTML = `
+                        <td>
+                            <strong>${pieceModele.modele.fabricant} ${pieceModele.modele.referenceModele}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">${pieceModele.role.replace('_', ' ')}</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="${showUrl}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    `;
+
+                    // Ajouter la ligne au début du tableau
+                    tbody.insertBefore(row, tbody.firstChild);
+
+                    // Animation d'apparition
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.style.transition = 'opacity 0.3s';
+                        row.style.opacity = '1';
+                    }, 10);
+                }
+
+                function showError(message) {
+                    errorDiv.textContent = message;
+                    errorDiv.classList.remove('d-none');
+                    successDiv.classList.add('d-none');
+                }
+
+                function showSuccess(message) {
+                    successDiv.textContent = message;
+                    successDiv.classList.remove('d-none');
+                    errorDiv.classList.add('d-none');
+                }
+
+                function hideMessages() {
+                    errorDiv.classList.add('d-none');
+                    successDiv.classList.add('d-none');
+                }
+            })();
+            </script>
         </div>
 
         <div class="col-12 col-lg-4">

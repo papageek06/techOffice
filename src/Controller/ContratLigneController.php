@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\ContratLigne;
 use App\Form\ContratLigneType;
 use App\Repository\ContratLigneRepository;
+use App\Repository\ReleveCompteurRepository;
+use App\Service\BillingCalculator;
+use App\Service\BillingEstimationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,12 +31,27 @@ final class ContratLigneController extends AbstractController
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $contratLigne = new ContratLigne();
+        
+        // Si un contrat_id est fourni, pré-remplir le contrat
+        $contratId = $request->query->get('contrat_id');
+        if ($contratId) {
+            $contrat = $entityManager->getRepository(\App\Entity\Contrat::class)->find($contratId);
+            if ($contrat) {
+                $contratLigne->setContrat($contrat);
+            }
+        }
+        
         $form = $this->createForm(ContratLigneType::class, $contratLigne);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($contratLigne);
             $entityManager->flush();
+
+            // Rediriger vers la page de configuration du contrat si contrat_id était présent
+            if ($contratId) {
+                return $this->redirectToRoute('app_contrat_configure', ['id' => $contratId], Response::HTTP_SEE_OTHER);
+            }
 
             return $this->redirectToRoute('app_contrat_ligne_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -45,10 +63,59 @@ final class ContratLigneController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_contrat_ligne_show', methods: ['GET'])]
-    public function show(ContratLigne $contratLigne): Response
-    {
+    public function show(
+        ContratLigne $contratLigne,
+        BillingEstimationService $billingEstimationService,
+        BillingCalculator $billingCalculator,
+        ReleveCompteurRepository $releveCompteurRepository
+    ): Response {
+        // Calculer l'estimation pour cette ligne
+        try {
+            $estimationData = $billingEstimationService->calculateEstimation($contratLigne);
+        } catch (\Exception $e) {
+            $estimationData = [
+                'compteursActuels' => [],
+                'derniereFacture' => null,
+                'estimation' => [
+                    'estimations' => [],
+                    'montantEstime' => 0,
+                    'pagesNoirTotal' => 0,
+                    'pagesCouleurTotal' => 0,
+                    'prochaineFacturation' => $contratLigne->getProchaineFacturation(),
+                ],
+            ];
+        }
+
+        // Récupérer le dernier compteur pour chaque affectation
+        $affectationsAvecCompteurs = [];
+        foreach ($contratLigne->getAffectationsMateriel() as $affectation) {
+            $imprimante = $affectation->getImprimante();
+            $dernierReleve = $releveCompteurRepository->createQueryBuilder('r')
+                ->where('r.imprimante = :imprimante')
+                ->orderBy('r.dateReleve', 'DESC')
+                ->setMaxResults(1)
+                ->setParameter('imprimante', $imprimante)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            $affectationsAvecCompteurs[] = [
+                'affectation' => $affectation,
+                'dernierReleve' => $dernierReleve,
+            ];
+        }
+
+        // Calculer le total de la dernière facture
+        $montantDerniereFacture = 0;
+        if ($estimationData['derniereFacture']) {
+            $calcul = $billingCalculator->calculateForPeriod($estimationData['derniereFacture']['periode']);
+            $montantDerniereFacture = $calcul['montant'];
+        }
+
         return $this->render('contrat_ligne/show.html.twig', [
             'contrat_ligne' => $contratLigne,
+            'estimationData' => $estimationData,
+            'affectationsAvecCompteurs' => $affectationsAvecCompteurs,
+            'montantDerniereFacture' => $montantDerniereFacture,
         ]);
     }
 

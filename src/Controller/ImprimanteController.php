@@ -16,9 +16,19 @@ final class ImprimanteController extends AbstractController
     #[Route(name: 'app_imprimante_index', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response
     {
+        // Charger les imprimantes avec leurs relations pour éviter les requêtes N+1
         $imprimantes = $entityManager
             ->getRepository(Imprimante::class)
-            ->findAll();
+            ->createQueryBuilder('i')
+            ->leftJoin('i.modele', 'm')
+            ->addSelect('m')
+            ->leftJoin('m.fabricant', 'f')
+            ->addSelect('f')
+            ->leftJoin('i.site', 's')
+            ->addSelect('s')
+            ->orderBy('i.numeroSerie', 'ASC')
+            ->getQuery()
+            ->getResult();
 
         return $this->render('imprimante/index.html.twig', [
             'imprimantes' => $imprimantes,
@@ -68,10 +78,30 @@ final class ImprimanteController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        // Récupérer toutes les pièces compatibles avec le modèle de l'imprimante
+        $pieceModeles = $entityManager
+            ->getRepository(\App\Entity\PieceModele::class)
+            ->findPiecesForModele($imprimante->getModele());
+
+        // Récupérer le stock CLIENT du site de l'imprimante (si existe)
+        $stockLocationRepository = $entityManager->getRepository(\App\Entity\StockLocation::class);
+        $stockClient = $stockLocationRepository->findClientStockForSite($imprimante->getSite());
+
+        // Créer un tableau associatif pour faciliter l'accès au stock par pièce
+        $stockParPiece = [];
+        if ($stockClient) {
+            foreach ($stockClient->getStockItems() as $stockItem) {
+                $stockParPiece[$stockItem->getPiece()->getId()] = $stockItem;
+            }
+        }
+
         return $this->render('imprimante/show.html.twig', [
             'imprimante' => $imprimante,
             'releves' => $releves,
             'etats' => $etats,
+            'pieceModeles' => $pieceModeles,
+            'stockClient' => $stockClient,
+            'stockParPiece' => $stockParPiece,
         ]);
     }
 

@@ -103,6 +103,27 @@
                                 <span class="text-muted">Non défini</span>
                             {% endif %}
                         </dd>
+
+                        {% if estimationData.derniereFacture %}
+                            <dt class="col-sm-4">Dernière facture</dt>
+                            <dd class="col-sm-8">
+                                <strong class="text-success">{{ montantDerniereFacture|number_format(2, ',', ' ') }} €</strong><br>
+                                <small class="text-muted">
+                                    {{ estimationData.derniereFacture.periode.dateDebut|date('d/m/Y') }} → {{ estimationData.derniereFacture.periode.dateFin|date('d/m/Y') }}
+                                </small>
+                            </dd>
+                        {% endif %}
+
+                        {% if estimationData.estimation.montantEstime > 0 %}
+                            <dt class="col-sm-4">Estimation prochaine facture</dt>
+                            <dd class="col-sm-8">
+                                <strong class="text-warning">{{ estimationData.estimation.montantEstime|number_format(2, ',', ' ') }} €</strong><br>
+                                <small class="text-muted">
+                                    Pour le {{ estimationData.estimation.prochaineFacturation|date('d/m/Y') }}<br>
+                                    Pages estimées: {{ estimationData.estimation.pagesNoirTotal }} N / {{ estimationData.estimation.pagesCouleurTotal }} C
+                                </small>
+                            </dd>
+                        {% endif %}
                     </dl>
                 </div>
             </div>
@@ -128,12 +149,15 @@
                                         <th>Imprimante</th>
                                         <th>Période</th>
                                         <th>Type</th>
+                                        <th>Dernier compteur</th>
                                         <th>Statut</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for affectation in contrat_ligne.affectationsMateriel %}
+                                    {% for item in affectationsAvecCompteurs %}
+                                        {% set affectation = item.affectation %}
+                                        {% set dernierReleve = item.dernierReleve %}
                                         <tr>
                                             <td>
                                                 <strong>{{ affectation.imprimante.numeroSerie }}</strong><br>
@@ -153,6 +177,21 @@
                                             </td>
                                             <td>
                                                 <span class="badge bg-secondary">{{ affectation.typeAffectation.value }}</span>
+                                            </td>
+                                            <td>
+                                                {% if dernierReleve %}
+                                                    <small>
+                                                        <strong>Noir:</strong> {{ dernierReleve.compteurNoir|default(0)|number_format(0, ',', ' ') }}<br>
+                                                        {% if dernierReleve.compteurCouleur %}
+                                                            <strong>Couleur:</strong> {{ dernierReleve.compteurCouleur|number_format(0, ',', ' ') }}
+                                                        {% else %}
+                                                            <span class="text-muted">Couleur: -</span>
+                                                        {% endif %}<br>
+                                                        <span class="text-muted">{{ dernierReleve.dateReleve|date('d/m/Y') }}</span>
+                                                    </small>
+                                                {% else %}
+                                                    <span class="text-muted small">Aucun relevé</span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 {% if affectation.dateFin is null %}

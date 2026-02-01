@@ -35,6 +35,9 @@
                             </div>
                         </div>
                         <div class="d-flex gap-2">
+                            <a href="{{ path('app_intervention_new', { site_id: site.id }) }}" class="btn btn-warning text-dark">
+                                <i class="bi bi-tools"></i> <span class="d-none d-md-inline">Intervention</span>
+                            </a>
                             <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-light">
                                 <i class="bi bi-pencil"></i> <span class="d-none d-md-inline">Modifier</span>
                             </a>
@@ -138,19 +141,22 @@
                             <table class="table table-hover mb-0" id="imprimantesTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 15%;">Modèle</th>
-                                        <th style="width: 12%;" class="d-none d-md-table-cell">Fabricant</th>
-                                        <th style="width: 12%;" class="d-none d-lg-table-cell">N° Série</th>
-                                        <th style="width: 10%;" class="d-none d-lg-table-cell">IP</th>
-                                        <th style="width: 8%;">Géré</th>
-                                        <th style="width: 30%;">Niveaux d'encre</th>
-                                        <th style="width: 13%;">Dernier scan</th>
+                                        <th style="width: 12%;">Modèle</th>
+                                        <th style="width: 10%;" class="d-none d-md-table-cell">Fabricant</th>
+                                        <th style="width: 10%;" class="d-none d-lg-table-cell">N° Série</th>
+                                        <th style="width: 8%;" class="d-none d-lg-table-cell">IP</th>
+                                        <th style="width: 6%;">Géré</th>
+                                        <th style="width: 25%;">Niveaux d'encre</th>
+                                        <th style="width: 19%;">Stock pièces</th>
+                                        <th style="width: 10%;">Dernier scan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for imprimante in site.imprimantes %}
                                         {% set dernierEtat = imprimante.getDernierEtatConsommable() %}
                                         {% set dernierReleve = imprimante.getDernierReleve() %}
+                                        {% set modeleId = imprimante.modele.id %}
+                                        {% set piecesCompatibles = pieceModelesParModele[modeleId] ?? [] %}
                                         <tr data-search="{{ imprimante.modele.referenceModele|lower }} {{ imprimante.numeroSerie|lower }} {{ imprimante.modele.fabricant.nomFabricant|lower }}">
                                             <td>
                                                 <a href="{{ path('app_imprimante_show', {'id': imprimante.id}) }}" class="text-decoration-none fw-bold">
@@ -227,6 +233,46 @@
                                                     </div>
                                                 {% else %}
                                                     <span class="text-muted small">Aucune donnée</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if piecesCompatibles is not empty %}
+                                                    <div class="d-flex flex-wrap gap-1 align-items-center" style="font-size: 0.7rem;">
+                                                        {% for pieceModele in piecesCompatibles %}
+                                                            {% set piece = pieceModele.piece %}
+                                                            {% set pieceId = piece.id %}
+                                                            {% set stockInfo = stockParPiece[pieceId] ?? null %}
+                                                            {% set isToner = pieceModele.role.value starts with 'TONER_' %}
+                                                            {% set isBacRecup = pieceModele.role.value == 'BAC_RECUP' %}
+                                                            {% if stockInfo %}
+                                                                {% set quantite = stockInfo.quantite %}
+                                                                {% set seuilAlerte = stockInfo.seuilAlerte %}
+                                                                {% set isLow = seuilAlerte is not null and quantite <= seuilAlerte %}
+                                                                {% set badgeColor = isToner ? 'primary' : (isBacRecup ? 'info' : 'secondary') %}
+                                                                <span class="badge bg-{{ badgeColor }} position-relative" 
+                                                                      style="font-size: 0.65rem; padding: 0.25rem 0.4rem;"
+                                                                      title="{{ piece.reference }} - Stock: {{ quantite }}{% if isLow %} (Seuil: {{ seuilAlerte }}){% endif %}">
+                                                                    {{ pieceModele.role.value|replace({'_': ' '})|slice(0, 6) }}
+                                                                    <span class="ms-1 fw-bold {{ isLow ? 'text-warning' : (quantite > 0 ? 'text-white' : 'text-muted') }}">
+                                                                        {{ quantite }}
+                                                                    </span>
+                                                                    {% if isLow %}
+                                                                        <i class="bi bi-exclamation-triangle-fill text-warning ms-1" style="font-size: 0.7rem;"></i>
+                                                                    {% endif %}
+                                                                </span>
+                                                            {% else %}
+                                                                {% set badgeColor = isToner ? 'primary' : (isBacRecup ? 'info' : 'secondary') %}
+                                                                <span class="badge bg-{{ badgeColor }} bg-opacity-50" 
+                                                                      style="font-size: 0.65rem; padding: 0.25rem 0.4rem;"
+                                                                      title="{{ piece.reference }} - Aucun stock">
+                                                                    {{ pieceModele.role.value|replace({'_': ' '})|slice(0, 6) }}
+                                                                    <span class="ms-1 text-muted">0</span>
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted small">Aucune pièce</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -446,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!noResultsRow) {
                     noResultsRow = document.createElement('tr');
                     noResultsRow.setAttribute('data-no-results', 'true');
-                    noResultsRow.innerHTML = '<td colspan="7" class="text-center text-muted py-4">Aucune imprimante trouvée</td>';
+                    noResultsRow.innerHTML = '<td colspan="8" class="text-center text-muted py-4">Aucune imprimante trouvée</td>';
                     imprimantesTable.querySelector('tbody').appendChild(noResultsRow);
                 }
                 noResultsRow.style.display = '';

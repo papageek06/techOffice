@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: FacturationPeriodeRepository::class)]
 #[ORM\Table(name: 'facturation_periode')]
-#[ORM\Index(name: 'idx_contrat_ligne', columns: ['contrat_ligne_id'])]
+#[ORM\Index(name: 'idx_fact_periode_contrat_ligne', columns: ['contrat_ligne_id'])]
 #[ORM\Index(name: 'idx_statut', columns: ['statut'])]
 #[ORM\HasLifecycleCallbacks]
 class FacturationPeriode

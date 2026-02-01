@@ -16,20 +16,28 @@
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
                         <strong>Nouvel appareil détecté</strong><br>
-                        {% if app.user.phoneNumber %}
+                        {% if dev_otp_display is defined and dev_otp_display %}
+                            <strong class="text-success">En local : email/SMS désactivés</strong> — utilisez le code affiché ci-dessous.
+                        {% elseif app.user.phoneNumber %}
                             Un code de vérification a été envoyé par SMS à votre numéro de téléphone.
                         {% endif %}
-                        {% if app.user.email %}
+                        {% if app.user.email and (not dev_otp_display is defined or not dev_otp_display) %}
                             {% if app.user.phoneNumber %}<br>{% endif %}
                             Un code de vérification a également été envoyé par email à <strong>{{ app.user.email }}</strong>.
                         {% endif %}
-                        {% if not app.user.phoneNumber and not app.user.email %}
+                        {% if not app.user.phoneNumber and not app.user.email and (not dev_otp_display is defined or not dev_otp_display) %}
                             <strong class="text-warning">Mode développement :</strong><br>
-                            Le code OTP a été loggé dans les logs de l'application (var/log/dev.log).<br>
-                            Recherchez la ligne contenant <code>[MOCK SMS]</code>, <code>[MOCK EMAIL]</code> ou <code>[DEV] Code OTP</code>.
+                            Le code OTP a été loggé dans les logs (var/log/dev.log). Recherchez <code>[MOCK SMS]</code>, <code>[MOCK EMAIL]</code> ou <code>[DEV] Code OTP</code>.
                         {% endif %}
                         <br><br>Veuillez entrer le code ci-dessous pour finaliser votre connexion.
                     </div>
+
+                    {% if dev_otp_display is defined and dev_otp_display %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-key"></i> <strong>Code (environnement local) :</strong>
+                            <span class="fs-4 fw-bold ms-2" style="letter-spacing: 0.3em;">{{ dev_otp_display }}</span>
+                        </div>
+                    {% endif %}
 
                     {% for flash_error in app.flashes('error') %}
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">

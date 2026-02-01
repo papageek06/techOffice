@@ -56,6 +56,115 @@
                 </div>
             </div>
 
+            {# Compteurs des imprimantes #}
+            {% if periode.facturationCompteurs|length > 0 %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-printer"></i> Compteurs des imprimantes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Imprimante</th>
+                                        <th class="text-end">Compteur début (N)</th>
+                                        <th class="text-end">Compteur fin (N)</th>
+                                        <th class="text-end">Pages N</th>
+                                        <th class="text-end">Compteur début (C)</th>
+                                        <th class="text-end">Compteur fin (C)</th>
+                                                        <th class="text-end">Pages C</th>
+                                                        <th>Source</th>
+                                                        <th>Statut</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for compteur in periode.facturationCompteurs %}
+                                                        {% set affectation = compteur.affectationMateriel %}
+                                                        {% set imprimante = affectation.imprimante %}
+                                                        <tr>
+                                                            <td>
+                                                                <strong>{{ imprimante.numeroSerie }}</strong><br>
+                                                                <small class="text-muted">{{ imprimante.modele.referenceModele }}</small>
+                                                                {% if imprimante.adresseIp %}
+                                                                    <br><small class="text-muted">IP: {{ imprimante.adresseIp }}</small>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <div>{{ compteur.compteurDebutNoir|number_format(0, ',', ' ') }}</div>
+                                                                <small class="text-muted">{{ periode.dateDebut|date('d/m/Y') }}</small>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <div>
+                                                                    {{ compteur.compteurFinNoir|number_format(0, ',', ' ') }}
+                                                                    {% if compteur.compteurFinEstime %}
+                                                                        <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <small class="text-muted">
+                                                                    {% if compteur.dateReleveFin %}
+                                                                        {{ compteur.dateReleveFin|date('d/m/Y') }}
+                                                                    {% else %}
+                                                                        {{ periode.dateFin|date('d/m/Y') }}
+                                                                    {% endif %}
+                                                                </small>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <strong class="text-primary">{{ compteur.pagesNoir|number_format(0, ',', ' ') }}</strong>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                {% if compteur.compteurDebutCouleur %}
+                                                                    <div>{{ compteur.compteurDebutCouleur|number_format(0, ',', ' ') }}</div>
+                                                                    <small class="text-muted">{{ periode.dateDebut|date('d/m/Y') }}</small>
+                                                                {% else %}
+                                                                    <span class="text-muted">-</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-end">
+                                                                {% if compteur.compteurFinCouleur %}
+                                                                    <div>
+                                                                        {{ compteur.compteurFinCouleur|number_format(0, ',', ' ') }}
+                                                                        {% if compteur.compteurFinEstime %}
+                                                                            <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    <small class="text-muted">
+                                                                        {% if compteur.dateReleveFin %}
+                                                                            {{ compteur.dateReleveFin|date('d/m/Y') }}
+                                                                        {% else %}
+                                                                            {{ periode.dateFin|date('d/m/Y') }}
+                                                                        {% endif %}
+                                                                    </small>
+                                                                {% else %}
+                                                                    <span class="text-muted">-</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <strong class="text-info">{{ compteur.pagesCouleur|number_format(0, ',', ' ') }}</strong>
+                                                            </td>
+                                                            <td>
+                                                                <small>{{ compteur.sourceDebut.value }} → {{ compteur.sourceFin.value }}</small>
+                                                            </td>
+                                                            <td>
+                                                                {% if compteur.compteurFinEstime %}
+                                                                    <span class="badge bg-warning" title="Compteur de fin estimé">Estimé</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-success" title="Compteur de fin réel">Réel</span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning mb-4">
+                    <i class="bi bi-exclamation-triangle"></i> Aucun compteur enregistré pour cette période.
+                </div>
+            {% endif %}
+
             {# Détail du calcul #}
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">

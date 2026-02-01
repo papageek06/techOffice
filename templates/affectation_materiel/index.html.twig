@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Affectations matériel{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1><i class="bi bi-printer"></i> Affectations matériel</h1>
+        <a href="{{ path('app_affectation_materiel_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouvelle affectation
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            {% if affectations|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ligne de contrat</th>
+                                <th>Imprimante</th>
+                                <th>Date début</th>
+                                <th>Date fin</th>
+                                <th>Type</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for affectation in affectations %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ path('app_contrat_ligne_show', {'id': affectation.contratLigne.id}) }}" class="text-decoration-none">
+                                            <strong>{{ affectation.contratLigne.libelle }}</strong>
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ affectation.contratLigne.contrat.reference }} - 
+                                            {{ affectation.contratLigne.site.nomSite }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ path('app_imprimante_show', {'id': affectation.imprimante.id}) }}" class="text-decoration-none">
+                                            <strong>{{ affectation.imprimante.numeroSerie }}</strong>
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ affectation.imprimante.modele.fabricant.nomFabricant }} 
+                                            {{ affectation.imprimante.modele.referenceModele }}
+                                        </small>
+                                    </td>
+                                    <td>{{ affectation.dateDebut|date('d/m/Y H:i') }}</td>
+                                    <td>
+                                        {% if affectation.dateFin %}
+                                            {{ affectation.dateFin|date('d/m/Y H:i') }}
+                                        {% else %}
+                                            <span class="text-muted">En cours</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ affectation.typeAffectation.value }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ affectation.dateFin ? 'secondary' : 'success' }}">
+                                            {{ affectation.dateFin ? 'Terminée' : 'Active' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ path('app_affectation_materiel_show', {'id': affectation.id}) }}" class="btn btn-outline-primary" title="Voir">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ path('app_affectation_materiel_edit', {'id': affectation.id}) }}" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> Aucune affectation matériel enregistrée.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

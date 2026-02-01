@@ -11,11 +11,70 @@
         </a>
     </div>
 
-    {% if pieces is empty %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> Aucune pièce dans le catalogue.
+    {% if pieces is not empty %}
+        {# Barre de recherche et filtres #}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchInput" class="form-label">
+                            <i class="bi bi-search"></i> Recherche
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="searchInput" 
+                               placeholder="Référence, désignation...">
+                        <small class="text-muted">Recherche en temps réel</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="modeleFilter" class="form-label">
+                            <i class="bi bi-filter"></i> Filtrer par modèle
+                        </label>
+                        <select class="form-select" id="modeleFilter">
+                            <option value="">Tous les modèles</option>
+                            {% set modelesSeen = [] %}
+                            {% for piece in pieces %}
+                                {% for pieceModele in piece.pieceModeles %}
+                                    {% set modeleId = pieceModele.modele.id %}
+                                    {% if modeleId not in modelesSeen %}
+                                        {% set modelesSeen = modelesSeen|merge([modeleId]) %}
+                                        <option value="{{ modeleId }}" data-modele-name="{{ pieceModele.modele.fabricant.nomFabricant }} {{ pieceModele.modele.referenceModele }}">
+                                            {{ pieceModele.modele.fabricant.nomFabricant }} {{ pieceModele.modele.referenceModele }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="typeFilter" class="form-label">
+                            <i class="bi bi-tag"></i> Filtrer par type
+                        </label>
+                        <select class="form-select" id="typeFilter">
+                            <option value="">Tous les types</option>
+                            {% set typesUniques = [] %}
+                            {% for piece in pieces %}
+                                {% if piece.typePiece.value not in typesUniques %}
+                                    {% set typesUniques = typesUniques|merge([piece.typePiece.value]) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% for type in typesUniques|sort %}
+                                <option value="{{ type }}">{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="resetFilters">
+                        <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                    </button>
+                    <span class="ms-3 text-muted">
+                        <span id="resultCount">{{ pieces|length }}</span> pièce(s) affichée(s)
+                    </span>
+                </div>
+            </div>
         </div>
-    {% else %}
+
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -24,24 +83,53 @@
                             <th>Référence</th>
                             <th>Désignation</th>
                             <th>Type</th>
-                            <th>Couleur</th>
+                            <th>Modèles compatibles</th>
+                            <th class="text-end">Stock total</th>
                             <th>Statut</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="piecesTableBody">
                         {% for piece in pieces %}
-                            <tr>
+                            <tr data-reference="{{ piece.reference|lower }}" 
+                                data-designation="{{ piece.designation|lower }}"
+                                data-type="{{ piece.typePiece.value }}"
+                                data-modeles="{% for pieceModele in piece.pieceModeles %}{{ pieceModele.modele.id }}{% if not loop.last %},{% endif %}{% endfor %}">
                                 <td><strong>{{ piece.reference }}</strong></td>
                                 <td>{{ piece.designation }}</td>
                                 <td>
                                     <span class="badge bg-secondary">{{ piece.typePiece.value }}</span>
                                 </td>
                                 <td>
-                                    {% if piece.couleur %}
-                                        <span class="badge bg-dark">{{ piece.couleur }}</span>
+                                    {% if piece.pieceModeles is not empty %}
+                                        <div class="d-flex flex-wrap gap-1" style="max-width: 400px;">
+                                            {% for pieceModele in piece.pieceModeles %}
+                                                <span class="badge bg-info" title="{{ pieceModele.role.value|replace({'_': ' '}) }}">
+                                                    {{ pieceModele.modele.fabricant.nomFabricant }} {{ pieceModele.modele.referenceModele }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
                                     {% else %}
-                                        <span class="text-muted">-</span>
+                                        <span class="text-muted"><small>Aucun modèle</small></span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% set totalStock = 0 %}
+                                    {% set hasLowStock = false %}
+                                    {% for stockItem in piece.stockItems %}
+                                        {% if stockItem.stockLocation.actif %}
+                                            {% set totalStock = totalStock + stockItem.quantite %}
+                                            {% if stockItem.seuilAlerte is not null and stockItem.quantite <= stockItem.seuilAlerte %}
+                                                {% set hasLowStock = true %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if totalStock > 0 %}
+                                        <span class="badge bg-{{ hasLowStock ? 'warning' : 'success' }}" title="Stock total sur tous les emplacements">
+                                            {{ totalStock }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">0</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -64,6 +152,108 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <script>
+        (function() {
+            const searchInput = document.getElementById('searchInput');
+            const modeleFilter = document.getElementById('modeleFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const resetFilters = document.getElementById('resetFilters');
+            const resultCount = document.getElementById('resultCount');
+            const tableBody = document.getElementById('piecesTableBody');
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+            // Trier les options du select par nom
+            (function() {
+                const options = Array.from(modeleFilter.querySelectorAll('option'));
+                const firstOption = options[0]; // Garder "Tous les modèles"
+                const otherOptions = options.slice(1).sort((a, b) => {
+                    return a.textContent.localeCompare(b.textContent);
+                });
+                modeleFilter.innerHTML = '';
+                modeleFilter.appendChild(firstOption);
+                otherOptions.forEach(opt => modeleFilter.appendChild(opt));
+            })();
+
+            function filterRows() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedModele = modeleFilter.value;
+                const selectedType = typeFilter.value;
+
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const reference = row.getAttribute('data-reference') || '';
+                    const designation = row.getAttribute('data-designation') || '';
+                    const type = row.getAttribute('data-type') || '';
+                    const modeles = row.getAttribute('data-modeles') || '';
+
+                    // Filtre par recherche (référence ou désignation)
+                    const matchesSearch = !searchTerm || 
+                        reference.includes(searchTerm) || 
+                        designation.includes(searchTerm);
+
+                    // Filtre par modèle
+                    const matchesModele = !selectedModele || 
+                        modeles.includes(selectedModele);
+
+                    // Filtre par type
+                    const matchesType = !selectedType || 
+                        type === selectedType;
+
+                    // Afficher ou masquer la ligne
+                    if (matchesSearch && matchesModele && matchesType) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Mettre à jour le compteur
+                resultCount.textContent = visibleCount;
+
+                // Afficher un message si aucun résultat
+                if (visibleCount === 0) {
+                    if (!document.getElementById('noResultsMessage')) {
+                        const noResults = document.createElement('tr');
+                        noResults.id = 'noResultsMessage';
+                        noResults.innerHTML = `
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="bi bi-search"></i> Aucune pièce ne correspond aux critères de recherche
+                            </td>
+                        `;
+                        tableBody.appendChild(noResults);
+                    }
+                } else {
+                    const noResults = document.getElementById('noResultsMessage');
+                    if (noResults) {
+                        noResults.remove();
+                    }
+                }
+            }
+
+            // Événements
+            searchInput.addEventListener('input', filterRows);
+            modeleFilter.addEventListener('change', filterRows);
+            typeFilter.addEventListener('change', filterRows);
+
+            resetFilters.addEventListener('click', function() {
+                searchInput.value = '';
+                modeleFilter.value = '';
+                typeFilter.value = '';
+                filterRows();
+                searchInput.focus();
+            });
+
+            // Initialisation
+            filterRows();
+        })();
+        </script>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Aucune pièce dans le catalogue.
         </div>
     {% endif %}
 </div>

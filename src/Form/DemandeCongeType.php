@@ -52,6 +52,11 @@ class DemandeCongeType extends AbstractType
                     'Sans solde' => TypeConge::SANS_SOLDE,
                     'Maladie' => TypeConge::MALADIE,
                 ],
+                'choice_label' => fn (TypeConge $t) => match ($t) {
+                    TypeConge::PAYE => 'Congé payé',
+                    TypeConge::SANS_SOLDE => 'Sans solde',
+                    TypeConge::MALADIE => 'Maladie',
+                },
                 'label' => 'Type de congé',
                 'attr' => [
                     'class' => 'form-select'
@@ -65,6 +70,12 @@ class DemandeCongeType extends AbstractType
                     'Refusée' => StatutDemandeConge::REFUSEE,
                     'Annulée' => StatutDemandeConge::ANNULEE,
                 ],
+                'choice_label' => fn (StatutDemandeConge $s) => match ($s) {
+                    StatutDemandeConge::DEMANDEE => 'Demandée',
+                    StatutDemandeConge::ACCEPTEE => 'Acceptée',
+                    StatutDemandeConge::REFUSEE => 'Refusée',
+                    StatutDemandeConge::ANNULEE => 'Annulée',
+                },
                 'label' => 'Statut',
                 'attr' => [
                     'class' => 'form-select'

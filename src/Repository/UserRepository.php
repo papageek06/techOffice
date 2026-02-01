@@ -33,6 +33,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * Retourne le premier utilisateur ayant ROLE_ADMIN (pour interventions auto-créées).
+     */
+    public function findFirstAdmin(): ?User
+    {
+        $users = $this->findBy([], ['id' => 'ASC']);
+        foreach ($users as $user) {
+            if (\in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+                return $user;
+            }
+        }
+
+        return $users[0] ?? null;
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */

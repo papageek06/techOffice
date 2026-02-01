@@ -1,0 +1,20 @@
+{% if pagination.totalPages > 1 %}
+<nav aria-label="Pagination des clients" class="mt-3">
+    <ul class="pagination justify-content-center flex-wrap">
+        <li class="page-item {{ pagination.currentPage <= 1 ? 'disabled' }}">
+            <a class="page-link" href="{{ pagination.currentPage <= 1 ? '#' : path('app_client_index', { page: pagination.currentPage - 1, q: pagination.q }) }}" aria-label="Précédent">‹</a>
+        </li>
+        {% for p in 1..pagination.totalPages %}
+            <li class="page-item {{ p == pagination.currentPage ? 'active' }}">
+                <a class="page-link" href="{{ path('app_client_index', { page: p, q: pagination.q }) }}">{{ p }}</a>
+            </li>
+        {% endfor %}
+        <li class="page-item {{ pagination.currentPage >= pagination.totalPages ? 'disabled' }}">
+            <a class="page-link" href="{{ pagination.currentPage >= pagination.totalPages ? '#' : path('app_client_index', { page: pagination.currentPage + 1, q: pagination.q }) }}" aria-label="Suivant">›</a>
+        </li>
+    </ul>
+    <p class="text-center text-muted small mb-0">
+        {{ pagination.total }} client(s) — page {{ pagination.currentPage }}/{{ pagination.totalPages }}
+    </p>
+</nav>
+{% endif %}

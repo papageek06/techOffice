@@ -125,8 +125,89 @@ final class SiteController extends AbstractController
             throw $this->createNotFoundException('Site non trouvé');
         }
 
+        // Charger les correspondances pièce/modèle pour tous les modèles d'imprimantes du site
+        $modeleIds = [];
+        foreach ($site->getImprimantes() as $imprimante) {
+            $modeleIds[] = $imprimante->getModele()->getId();
+        }
+
+        $pieceModeles = [];
+        $stockParPiece = [];
+        $pieceModelesParModele = [];
+        
+        if (!empty($modeleIds)) {
+            // Charger toutes les correspondances pièce/modèle pour les modèles du site
+            $pieceModeles = $entityManager
+                ->getRepository(\App\Entity\PieceModele::class)
+                ->createQueryBuilder('pm')
+                ->leftJoin('pm.piece', 'piece')
+                ->leftJoin('pm.modele', 'modele')
+                ->addSelect('piece')
+                ->addSelect('modele')
+                ->where('pm.modele IN (:modeleIds)')
+                ->setParameter('modeleIds', $modeleIds)
+                ->getQuery()
+                ->getResult();
+
+            // Créer un index par modèle pour faciliter l'accès
+            foreach ($pieceModeles as $pm) {
+                $modeleId = $pm->getModele()->getId();
+                if (!isset($pieceModelesParModele[$modeleId])) {
+                    $pieceModelesParModele[$modeleId] = [];
+                }
+                $pieceModelesParModele[$modeleId][] = $pm;
+            }
+            
+            // Trier les pièces par modèle (toners en premier)
+            foreach ($pieceModelesParModele as $modeleId => &$pieces) {
+                usort($pieces, function($a, $b) {
+                    $roleA = $a->getRole()->value;
+                    $roleB = $b->getRole()->value;
+                    
+                    // Les toners en premier
+                    $isTonerA = str_starts_with($roleA, 'TONER_');
+                    $isTonerB = str_starts_with($roleB, 'TONER_');
+                    
+                    if ($isTonerA && !$isTonerB) {
+                        return -1;
+                    }
+                    if (!$isTonerA && $isTonerB) {
+                        return 1;
+                    }
+                    
+                    // Si les deux sont des toners ou non-toners, trier par ordre alphabétique
+                    return strcmp($roleA, $roleB);
+                });
+            }
+            unset($pieces); // Libérer la référence
+        }
+
+        // Créer un index des stocks par pièce pour tous les stocks du site
+        foreach ($site->getStockLocations() as $stockLocation) {
+            foreach ($stockLocation->getStockItems() as $stockItem) {
+                $pieceId = $stockItem->getPiece()->getId();
+                if (!isset($stockParPiece[$pieceId])) {
+                    $stockParPiece[$pieceId] = [
+                        'quantite' => 0,
+                        'seuilAlerte' => null,
+                        'stockLocation' => $stockLocation,
+                    ];
+                }
+                $stockParPiece[$pieceId]['quantite'] += $stockItem->getQuantite();
+                // Prendre le seuil d'alerte du premier stock trouvé (ou le plus bas)
+                if ($stockItem->getSeuilAlerte() !== null) {
+                    if ($stockParPiece[$pieceId]['seuilAlerte'] === null || 
+                        $stockItem->getSeuilAlerte() < $stockParPiece[$pieceId]['seuilAlerte']) {
+                        $stockParPiece[$pieceId]['seuilAlerte'] = $stockItem->getSeuilAlerte();
+                    }
+                }
+            }
+        }
+
         return $this->render('site/show.html.twig', [
             'site' => $site,
+            'pieceModelesParModele' => $pieceModelesParModele,
+            'stockParPiece' => $stockParPiece,
         ]);
     }
 

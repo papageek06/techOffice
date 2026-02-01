@@ -24,8 +24,8 @@
                 <td>{{ demande_conge.id }}</td>
                 <td>{{ demande_conge.dateDebut ? demande_conge.dateDebut|date('Y-m-d') : '' }}</td>
                 <td>{{ demande_conge.dateFin ? demande_conge.dateFin|date('Y-m-d') : '' }}</td>
-                <td>{{ demande_conge.typeConge }}</td>
-                <td>{{ demande_conge.statut }}</td>
+                <td>{{ demande_conge.typeConge.value }}</td>
+                <td>{{ demande_conge.statut.value }}</td>
                 <td>{{ demande_conge.dateDemande ? demande_conge.dateDemande|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ demande_conge.commentaire }}</td>
                 <td>
