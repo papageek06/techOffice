@@ -64,9 +64,27 @@ DEFAULT_URI=https://votredomaine.com
    php bin/console cache:clear --env=prod
    ```
 
-7. **Permissions :** répertoires `var/` et `var/cache/`, `var/log/` en écriture pour l’utilisateur du serveur web.
+7. **Racine web (IMPORTANT) :** le **document root** du site doit pointer sur le dossier **`public/`** du projet (et non sur la racine du dépôt). Sinon toutes les URLs (/login, /admin, etc.) donnent « URL not found ».  
+   - Ex. : si le code est dans `~/techOffice`, la racine web doit être `~/techOffice/public`.  
+   - **Apache** : le fichier `public/.htaccess` envoie les requêtes vers `index.php`. Si ça ne marche pas, vérifier que `AllowOverride All` est actif (sinon contacter l’hébergeur).  
+   - **Nginx** (certains hébergements OVH) : `.htaccess` est ignoré. Il faut dans la config du vhost (ou via le panel OVH si proposé) :
+   ```nginx
+   root /chemin/vers/techOffice/public;
+   location / {
+       try_files $uri /index.php$is_args$args;
+   }
+   location ~ ^/index\.php(/|$) {
+       fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;  # ou 127.0.0.1:9000
+       include fastcgi_params;
+       fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+       internal;
+   }
+   ```
+   - **Test rapide** : ouvrir `https://votredomaine.com/index.php/login`. Si ça affiche le login, le problème vient uniquement de la réécriture (Apache/Nginx).
 
-8. **Worker Messenger (si vous utilisez les tâches async, ex. webhooks inbound) :**
+8. **Permissions :** répertoires `var/` et `var/cache/`, `var/log/` en écriture pour l’utilisateur du serveur web.
+
+9. **Worker Messenger (si vous utilisez les tâches async, ex. webhooks inbound) :**
    ```bash
    php bin/console messenger:consume async -v
    ```

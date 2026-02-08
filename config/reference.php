@@ -706,7 +706,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             user?: scalar|Param|null, // Defaults to "root" at runtime.
  *             password?: scalar|Param|null, // Defaults to null at runtime.
  *             override_url?: bool|Param, // Deprecated: The "doctrine.dbal.override_url" configuration key is deprecated.
- *             dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option only applies to MySQL/MariaDB
+ *             dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option has no effects for the SQLite platform
  *             application_name?: scalar|Param|null,
  *             charset?: scalar|Param|null,
  *             path?: scalar|Param|null,
@@ -757,7 +757,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                 user?: scalar|Param|null, // Defaults to "root" at runtime.
  *                 password?: scalar|Param|null, // Defaults to null at runtime.
  *                 override_url?: bool|Param, // Deprecated: The "doctrine.dbal.override_url" configuration key is deprecated.
- *                 dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option only applies to MySQL/MariaDB
+ *                 dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option has no effects for the SQLite platform
  *                 application_name?: scalar|Param|null,
  *                 charset?: scalar|Param|null,
  *                 path?: scalar|Param|null,
@@ -789,7 +789,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                 user?: scalar|Param|null, // Defaults to "root" at runtime.
  *                 password?: scalar|Param|null, // Defaults to null at runtime.
  *                 override_url?: bool|Param, // Deprecated: The "doctrine.dbal.override_url" configuration key is deprecated.
- *                 dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option only applies to MySQL/MariaDB
+ *                 dbname_suffix?: scalar|Param|null, // Adds the given suffix to the configured database name, this option has no effects for the SQLite platform
  *                 application_name?: scalar|Param|null,
  *                 charset?: scalar|Param|null,
  *                 path?: scalar|Param|null,

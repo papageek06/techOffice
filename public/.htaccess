@@ -1,0 +1,18 @@
+# Symfony - front controller
+# Toutes les URLs (/login, /admin, etc.) sont envoyées vers index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Ne pas réécrire les vrais fichiers ou dossiers (CSS, JS, images)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>
+
+# Dossier par défaut
+DirectoryIndex index.php
+
+# Désactiver l'affichage du contenu des répertoires
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>

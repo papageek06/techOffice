@@ -1,0 +1,8 @@
+# À utiliser UNIQUEMENT si la racine web pointe sur la racine du projet (et non sur public/)
+# Redirige tout vers public/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php [L,QSA]
+</IfModule>
