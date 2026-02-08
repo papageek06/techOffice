@@ -7,4 +7,7 @@ import './stimulus_bootstrap.js';
  */
 import './styles/app.scss';
 
-console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');
+// Log désactivé en prod pour éviter le bruit en console
+if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
+    console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');
+}

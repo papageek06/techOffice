@@ -1,8 +1,15 @@
 # À utiliser UNIQUEMENT si la racine web pointe sur la racine du projet (et non sur public/)
-# Redirige tout vers public/index.php
+# 1) Servir les assets (CSS/JS) depuis public/build/ pour éviter les 404 en boucle (erreur type "b0bc 209")
+# 2) Envoyer le reste vers public/index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
+
+    # Servir les fichiers statiques du build Encore (évite erreurs répétées dans la console)
+    RewriteRule ^build/(.*)$ public/build/$1 [L]
+
+    # Tout le reste vers le front controller Symfony
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/index.php [L,QSA]
 </IfModule>

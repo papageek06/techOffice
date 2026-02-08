@@ -31,14 +31,14 @@ class CreateAdminUserCommand extends Command
             ->addArgument(
                 'login',
                 InputArgument::OPTIONAL,
-                'Identifiant (email) de connexion de l’admin',
-                'admin@admin',
+                'Identifiant (email). Si vide, utilise SUPER_ADMIN_EMAIL depuis .env',
+                '',
             )
             ->addArgument(
                 'password',
                 InputArgument::OPTIONAL,
-                'Mot de passe de l’admin',
-                'DOM@dom1409',
+                'Mot de passe. Si vide, utilise SUPER_ADMIN_PASSWORD depuis .env',
+                '',
             )
         ;
     }
@@ -47,8 +47,24 @@ class CreateAdminUserCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $login = (string) $input->getArgument('login');
-        $plainPassword = (string) $input->getArgument('password');
+        $login = trim((string) $input->getArgument('login'));
+        $plainPassword = trim((string) $input->getArgument('password'));
+
+        // En prod : utiliser les variables d'environnement si les arguments ne sont pas fournis
+        if ($login === '' && ($envEmail = $_ENV['SUPER_ADMIN_EMAIL'] ?? null) && $envEmail !== '') {
+            $login = $envEmail;
+        }
+        if ($login === '') {
+            $io->error('Indiquez le login (email) en argument ou définissez SUPER_ADMIN_EMAIL dans .env.local');
+            return Command::FAILURE;
+        }
+        if ($plainPassword === '' && ($envPass = $_ENV['SUPER_ADMIN_PASSWORD'] ?? null) && $envPass !== '') {
+            $plainPassword = $envPass;
+        }
+        if ($plainPassword === '') {
+            $io->error('Indiquez le mot de passe en argument ou définissez SUPER_ADMIN_PASSWORD dans .env.local');
+            return Command::FAILURE;
+        }
 
         $io->title('Création / mise à jour du super administrateur');
         $io->text(sprintf('Login : %s', $login));
@@ -75,11 +91,7 @@ class CreateAdminUserCommand extends Command
         $this->em->persist($user);
         $this->em->flush();
 
-        $io->success(sprintf(
-            'Super admin prêt ! Login: %s | Mot de passe: %s',
-            $login,
-            $plainPassword,
-        ));
+        $io->success(sprintf('Super admin prêt. Login : %s', $login));
 
         return Command::SUCCESS;
     }

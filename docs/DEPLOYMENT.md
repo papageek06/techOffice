@@ -23,6 +23,8 @@ Le projet utilise **MySQL/MariaDB uniquement**.
 | `MESSENGER_TRANSPORT_DSN` | Oui | Ex. `doctrine://default?auto_setup=0` ou Redis/AMQP pour async |
 | `MAILER_DSN` | Selon besoin | DSN du mailer (prod) |
 | `DEFAULT_URI` | Recommandé | URL publique du site (ex. `https://techoffice.example.com`) |
+| `SUPER_ADMIN_EMAIL` | Optionnel | Email du super admin (pour `app:user:create-admin` sans arguments) |
+| `SUPER_ADMIN_PASSWORD` | Optionnel | Mot de passe du super admin (pour `app:user:create-admin` sans arguments) |
 
 **Exemple `.env.local` (à ne pas committer) :**
 
@@ -31,6 +33,8 @@ APP_ENV=prod
 APP_DEBUG=0
 APP_SECRET=votre_secret_genere
 DATABASE_URL="mysql://user:pass@db:3306/techoffice?serverVersion=8.0.32&charset=utf8mb4"
+SUPER_ADMIN_EMAIL=admin@votredomaine.com
+SUPER_ADMIN_PASSWORD=votre_mot_de_passe_admin
 PRINTAUDIT_WEBHOOK_TOKEN=secret_webhook
 DEFAULT_URI=https://votredomaine.com
 ```
@@ -59,12 +63,18 @@ DEFAULT_URI=https://votredomaine.com
    php bin/console doctrine:migrations:migrate --no-interaction
    ```
 
-6. **Vider et réchauffer le cache :**
+6. **Super admin (recommandé en prod) :** dans `.env.local`, définir `SUPER_ADMIN_EMAIL` et `SUPER_ADMIN_PASSWORD`, puis exécuter une fois :
+   ```bash
+   php bin/console app:user:create-admin
+   ```
+   Le compte sera créé ou mis à jour avec les identifiants définis dans l’env.
+
+7. **Vider et réchauffer le cache :**
    ```bash
    php bin/console cache:clear --env=prod
    ```
 
-7. **Racine web (IMPORTANT) :** le **document root** du site doit pointer sur le dossier **`public/`** du projet (et non sur la racine du dépôt). Sinon toutes les URLs (/login, /admin, etc.) donnent « URL not found ».  
+8. **Racine web (IMPORTANT) :** le **document root** du site doit pointer sur le dossier **`public/`** du projet (et non sur la racine du dépôt). Sinon toutes les URLs (/login, /admin, etc.) donnent « URL not found ».  
    - Ex. : si le code est dans `~/techOffice`, la racine web doit être `~/techOffice/public`.  
    - **Apache** : le fichier `public/.htaccess` envoie les requêtes vers `index.php`. Si ça ne marche pas, vérifier que `AllowOverride All` est actif (sinon contacter l’hébergeur).  
    - **Nginx** (certains hébergements OVH) : `.htaccess` est ignoré. Il faut dans la config du vhost (ou via le panel OVH si proposé) :
@@ -82,9 +92,9 @@ DEFAULT_URI=https://votredomaine.com
    ```
    - **Test rapide** : ouvrir `https://votredomaine.com/index.php/login`. Si ça affiche le login, le problème vient uniquement de la réécriture (Apache/Nginx).
 
-8. **Permissions :** répertoires `var/` et `var/cache/`, `var/log/` en écriture pour l’utilisateur du serveur web.
+9. **Permissions :** répertoires `var/` et `var/cache/`, `var/log/` en écriture pour l’utilisateur du serveur web.
 
-9. **Worker Messenger (si vous utilisez les tâches async, ex. webhooks inbound) :**
+10. **Worker Messenger (si vous utilisez les tâches async, ex. webhooks inbound) :**
    ```bash
    php bin/console messenger:consume async -v
    ```
