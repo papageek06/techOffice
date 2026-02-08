@@ -172,6 +172,7 @@
                 let tableBody = document.getElementById('compatibilitesTableBody');
                 const emptyMessage = document.getElementById('emptyMessage');
                 const addUrl = '{{ path('app_piece_add_modele', {'id': piece.id}) }}';
+                const addModeleCsrfToken = '{{ csrf_token('piece_add_modele') }}';
 
                 // Récupérer les modèles déjà associés pour les exclure du sélecteur
                 const existingModeles = new Set();
@@ -211,6 +212,7 @@
                         const formData = new FormData();
                         formData.append('modele_id', modeleId);
                         formData.append('role', role);
+                        formData.append('_token', addModeleCsrfToken);
 
                         const response = await fetch(addUrl, {
                             method: 'POST',
@@ -259,7 +261,7 @@
 
                     } catch (error) {
                         console.error('Erreur:', error);
-                        showError('Une erreur est survenue lors de l\'ajout');
+                        showError('Une erreur est survenue lors de l\'ajout. Vous pouvez réessayer.');
                     } finally {
                         addModeleBtn.disabled = false;
                         addModeleBtn.innerHTML = '<i class="bi bi-check-circle"></i> Ajouter';
@@ -297,23 +299,14 @@
                         tableBody = tbody;
                     }
 
-                    // Créer la nouvelle ligne
+                    // Créer la nouvelle ligne (échappement XSS pour données API)
+                    var esc = window.escapeHtml || function(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
                     const row = document.createElement('tr');
                     row.setAttribute('data-piece-modele-id', pieceModele.id);
-                    const showUrl = '{{ path('app_piece_modele_show', {'id': 0}) }}'.replace('0', pieceModele.id);
-                    row.innerHTML = `
-                        <td>
-                            <strong>${pieceModele.modele.fabricant} ${pieceModele.modele.referenceModele}</strong>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">${pieceModele.role.replace('_', ' ')}</span>
-                        </td>
-                        <td class="text-end">
-                            <a href="${showUrl}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
-                    `;
+                    const showUrl = '{{ path('app_piece_modele_show', {'id': 0}) }}'.replace('0', esc(pieceModele.id));
+                    row.innerHTML = '<td><strong>' + esc(pieceModele.modele.fabricant) + ' ' + esc(pieceModele.modele.referenceModele) + '</strong></td>' +
+                        '<td><span class="badge bg-info">' + esc(String(pieceModele.role).replace('_', ' ')) + '</span></td>' +
+                        '<td class="text-end"><a href="' + showUrl + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>';
 
                     // Ajouter la ligne au début du tableau
                     tbody.insertBefore(row, tbody.firstChild);

@@ -548,7 +548,9 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Erreur lors du chargement des alertes:', error);
-                alertesCount.textContent = '-';
+                alertesCount.textContent = '—';
+                alertesCount.setAttribute('title', 'Erreur de chargement');
+                alertesCount.setAttribute('aria-label', 'Nombre d\'alertes non disponible');
             });
     }
     

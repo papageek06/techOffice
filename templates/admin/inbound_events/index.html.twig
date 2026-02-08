@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Événements Inbound (Alertes){% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <h1 class="mb-4"><i class="bi bi-inbox"></i> Événements Inbound</h1>
+
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-auto">
+            <label class="form-label visually-hidden">Statut</label>
+            <select name="status" class="form-select">
+                <option value="">Tous</option>
+                <option value="received" {{ status_filter == 'received' ? 'selected' : '' }}>received</option>
+                <option value="parsed" {{ status_filter == 'parsed' ? 'selected' : '' }}>parsed</option>
+                <option value="failed" {{ status_filter == 'failed' ? 'selected' : '' }}>failed</option>
+                <option value="ignored" {{ status_filter == 'ignored' ? 'selected' : '' }}>ignored</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label visually-hidden">Provider</label>
+            <select name="provider" class="form-select">
+                <option value="">Tous</option>
+                <option value="printaudit_fm" {{ provider_filter == 'printaudit_fm' ? 'selected' : '' }}>printaudit_fm</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Reçu le</th>
+                    <th>Provider</th>
+                    <th>Status</th>
+                    <th>Meta (aperçu)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td>{{ event.id }}</td>
+                    <td>{{ event.receivedAt|date('Y-m-d H:i:s') }}</td>
+                    <td>{{ event.provider }}</td>
+                    <td>
+                        <span class="badge bg-{{ event.status == 'parsed' ? 'success' : (event.status == 'failed' ? 'danger' : 'secondary') }}">{{ event.status }}</span>
+                    </td>
+                    <td>
+                        {% if event.meta %}
+                            <code class="small">{{ event.meta|slice(0, 1)|json_encode }}</code>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ path('app_admin_inbound_events_show', { id: event.id }) }}" class="btn btn-sm btn-outline-primary">Détail</a>
+                        <a href="{{ path('app_admin_inbound_events_show', { id: event.id, format: 'json' }) }}" class="btn btn-sm btn-outline-secondary">JSON</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-muted">Aucun événement.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

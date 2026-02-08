@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inbound #{{ event.id }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('app_admin_inbound_events_index') }}">Inbound Events</a></li>
+            <li class="breadcrumb-item active">#{{ event.id }}</li>
+        </ol>
+    </nav>
+
+    <h1><i class="bi bi-inbox"></i> Événement #{{ event.id }}</h1>
+
+    <dl class="row mt-3">
+        <dt class="col-sm-2">Reçu le</dt>
+        <dd class="col-sm-10">{{ event.receivedAt|date('Y-m-d H:i:s') }}</dd>
+
+        <dt class="col-sm-2">Provider / Endpoint</dt>
+        <dd class="col-sm-10">{{ event.provider }} / {{ event.endpoint }}</dd>
+
+        <dt class="col-sm-2">Content-Type</dt>
+        <dd class="col-sm-10">{{ event.contentType ?? '-' }}</dd>
+
+        <dt class="col-sm-2">Status</dt>
+        <dd class="col-sm-10"><span class="badge bg-{{ event.status == 'parsed' ? 'success' : (event.status == 'failed' ? 'danger' : 'secondary') }}">{{ event.status }}</span></dd>
+
+        {% if event.imprimante %}
+        <dt class="col-sm-2">Imprimante liée</dt>
+        <dd class="col-sm-10"><a href="{{ path('app_imprimante_show', { id: event.imprimante.id }) }}">{{ event.imprimante.numeroSerie }}</a></dd>
+        {% endif %}
+
+        <dt class="col-sm-2">Meta</dt>
+        <dd class="col-sm-10"><pre class="bg-light p-2 small overflow-auto" style="max-height: 200px;">{{ event.meta|json_encode(448) }}</pre></dd>
+
+        {% if event.parseError %}
+        <dt class="col-sm-2 text-danger">Parse error</dt>
+        <dd class="col-sm-10"><pre class="bg-danger bg-opacity-10 text-danger p-2 small">{{ event.parseError }}</pre></dd>
+        {% endif %}
+
+        <dt class="col-sm-2">Headers</dt>
+        <dd class="col-sm-10"><pre class="bg-light p-2 small overflow-auto" style="max-height: 150px;">{{ event.headers|json_encode(384) }}</pre></dd>
+
+        <dt class="col-sm-2">Payload (raw)</dt>
+        <dd class="col-sm-10"><pre class="bg-light p-2 small overflow-auto" style="max-height: 300px;">{{ event.payloadRaw|e }}</pre></dd>
+    </dl>
+
+    <p>
+        <a href="{{ path('app_admin_inbound_events_index') }}" class="btn btn-outline-secondary">Retour à la liste</a>
+        <a href="{{ path('app_admin_inbound_events_show', { id: event.id, format: 'json' }) }}" class="btn btn-outline-primary">Voir en JSON</a>
+    </p>
+</div>
+{% endblock %}

@@ -50,7 +50,7 @@
                                     <th class="d-none d-md-table-cell" style="width: 10%;">N° Série</th>
                                     <th class="d-none d-md-table-cell" style="width: 10%;">IP</th>
                                     <th style="width: 8%;">Géré</th>
-                                    <th style="width: 35%;">Niveaux d'encre</th>
+                                    <th style="width: 38%;">Encre / Bac récup.</th>
                                     <th style="width: 15%;">Dernier scan</th>
                                 </tr>
                             </thead>
@@ -151,6 +151,23 @@
                                                                 <small class="text-muted d-block text-center" style="font-size: 0.6rem;">J</small>
                                                             </div>
                                                         {% endif %}
+                                                    {% endif %}
+                                                    {# Bac récupération #}
+                                                    {% if dernierEtat.bacRecuperation is not null %}
+                                                        <div style="min-width: 50px; max-width: 80px; flex: 1 1 auto;">
+                                                            <div class="progress" style="height: 16px;">
+                                                                <div class="progress-bar d-flex align-items-center justify-content-center" 
+                                                                     role="progressbar" 
+                                                                     style="width: {{ dernierEtat.bacRecuperation > 100 ? 100 : dernierEtat.bacRecuperation }}%; background-color: #795548; color: #fff; font-size: 0.65rem;" 
+                                                                     aria-valuenow="{{ dernierEtat.bacRecuperation }}" 
+                                                                     aria-valuemin="0" 
+                                                                     aria-valuemax="100"
+                                                                     title="Bac récup.: {{ dernierEtat.bacRecuperation }}%">
+                                                                    <strong>{{ dernierEtat.bacRecuperation }}%</strong>
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-muted d-block text-center" style="font-size: 0.6rem;">Bac</small>
+                                                        </div>
                                                     {% endif %}
                                                 </div>
                                             {% else %}

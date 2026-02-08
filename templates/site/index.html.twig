@@ -81,8 +81,13 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Erreur lors de la recherche:', error);
-            searchResults.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Une erreur est survenue lors de la recherche.</div>';
+            searchResults.innerHTML = '<div class="alert alert-danger d-flex align-items-center flex-wrap gap-2">' +
+                '<span class="flex-grow-1"><i class="bi bi-exclamation-triangle me-2"></i>Une erreur est survenue lors de la recherche.</span>' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" id="searchRetryBtn"><i class="bi bi-arrow-clockwise me-1"></i>Réessayer</button>' +
+                '</div>';
             isSearching = false;
+            var retryBtn = document.getElementById('searchRetryBtn');
+            if (retryBtn) retryBtn.addEventListener('click', function() { performSearch(searchInput.value.trim()); });
         });
     }
 

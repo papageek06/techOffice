@@ -509,11 +509,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += '<h6 class="text-muted mb-2">Résumé</h6>';
                     html += '<dl class="row mb-0 small">';
                     html += '<dt class="col-sm-6">Pages noir:</dt>';
-                    html += '<dd class="col-sm-6"><strong>' + data.calcul.pagesNoir + '</strong></dd>';
+                    html += '<dd class="col-sm-6"><strong>' + esc(data.calcul.pagesNoir) + '</strong></dd>';
                     html += '<dt class="col-sm-6">Pages couleur:</dt>';
-                    html += '<dd class="col-sm-6"><strong>' + data.calcul.pagesCouleur + '</strong></dd>';
+                    html += '<dd class="col-sm-6"><strong>' + esc(data.calcul.pagesCouleur) + '</strong></dd>';
                     html += '<dt class="col-sm-6">Montant total:</dt>';
-                    html += '<dd class="col-sm-6"><strong class="text-success">' + parseFloat(data.calcul.montant).toFixed(2).replace('.', ',') + ' €</strong></dd>';
+                    html += '<dd class="col-sm-6"><strong class="text-success">' + esc(parseFloat(data.calcul.montant).toFixed(2).replace('.', ',')) + ' €</strong></dd>';
                     html += '</dl>';
                     html += '</div>';
 
@@ -523,15 +523,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += '<dl class="row mb-0 small">';
                     if (data.contratLigne.prixFixe) {
                         html += '<dt class="col-sm-6">Prix fixe:</dt>';
-                        html += '<dd class="col-sm-6">' + parseFloat(data.contratLigne.prixFixe).toFixed(2).replace('.', ',') + ' €</dd>';
+                        html += '<dd class="col-sm-6">' + esc(parseFloat(data.contratLigne.prixFixe).toFixed(2).replace('.', ',')) + ' €</dd>';
                     }
                     if (data.contratLigne.prixPageNoir) {
                         html += '<dt class="col-sm-6">Prix page noir:</dt>';
-                        html += '<dd class="col-sm-6">' + parseFloat(data.contratLigne.prixPageNoir).toFixed(4).replace('.', ',') + ' €</dd>';
+                        html += '<dd class="col-sm-6">' + esc(parseFloat(data.contratLigne.prixPageNoir).toFixed(4).replace('.', ',')) + ' €</dd>';
                     }
                     if (data.contratLigne.prixPageCouleur) {
                         html += '<dt class="col-sm-6">Prix page couleur:</dt>';
-                        html += '<dd class="col-sm-6">' + parseFloat(data.contratLigne.prixPageCouleur).toFixed(4).replace('.', ',') + ' €</dd>';
+                        html += '<dd class="col-sm-6">' + esc(parseFloat(data.contratLigne.prixPageCouleur).toFixed(4).replace('.', ',')) + ' €</dd>';
                     }
                     html += '</dl>';
                     html += '</div>';
@@ -560,31 +560,31 @@ document.addEventListener('DOMContentLoaded', function() {
                         data.compteurs.forEach(function(compteur) {
                             html += '<tr>';
                             html += '<td>';
-                            html += '<strong>' + compteur.imprimante.numeroSerie + '</strong><br>';
-                            html += '<small class="text-muted">' + compteur.imprimante.modele;
+                            html += '<strong>' + esc(compteur.imprimante.numeroSerie) + '</strong><br>';
+                            html += '<small class="text-muted">' + esc(compteur.imprimante.modele);
                             if (compteur.imprimante.adresseIp) {
-                                html += ' (' + compteur.imprimante.adresseIp + ')';
+                                html += ' (' + esc(compteur.imprimante.adresseIp) + ')';
                             }
                             html += '</small><br>';
-                            html += '<small class="text-muted">Affectation: ' + compteur.affectation.dateDebut;
+                            html += '<small class="text-muted">Affectation: ' + esc(compteur.affectation.dateDebut);
                             if (compteur.affectation.dateFin) {
-                                html += ' → ' + compteur.affectation.dateFin;
+                                html += ' → ' + esc(compteur.affectation.dateFin);
                             } else {
                                 html += ' → En cours';
                             }
                             html += '</small>';
                             html += '</td>';
-                            html += '<td class="text-end">' + compteur.compteurs.debutNoir.toLocaleString('fr-FR') + '</td>';
-                            html += '<td class="text-end">' + compteur.compteurs.finNoir.toLocaleString('fr-FR');
+                            html += '<td class="text-end">' + esc(compteur.compteurs.debutNoir != null ? compteur.compteurs.debutNoir.toLocaleString('fr-FR') : '') + '</td>';
+                            html += '<td class="text-end">' + esc(compteur.compteurs.finNoir != null ? compteur.compteurs.finNoir.toLocaleString('fr-FR') : '');
                             if (compteur.compteurs.compteurFinEstime) {
                                 html += ' <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>';
                             }
                             html += '</td>';
-                            html += '<td class="text-end"><strong class="text-primary">' + compteur.compteurs.pagesNoir.toLocaleString('fr-FR') + '</strong></td>';
-                            html += '<td class="text-end">' + (compteur.compteurs.debutCouleur ? compteur.compteurs.debutCouleur.toLocaleString('fr-FR') : '-') + '</td>';
+                            html += '<td class="text-end"><strong class="text-primary">' + esc(compteur.compteurs.pagesNoir != null ? compteur.compteurs.pagesNoir.toLocaleString('fr-FR') : '') + '</strong></td>';
+                            html += '<td class="text-end">' + esc(compteur.compteurs.debutCouleur != null ? compteur.compteurs.debutCouleur.toLocaleString('fr-FR') : '-') + '</td>';
                             html += '<td class="text-end">';
-                            if (compteur.compteurs.finCouleur) {
-                                html += compteur.compteurs.finCouleur.toLocaleString('fr-FR');
+                            if (compteur.compteurs.finCouleur != null) {
+                                html += esc(compteur.compteurs.finCouleur.toLocaleString('fr-FR'));
                                 if (compteur.compteurs.compteurFinEstime) {
                                     html += ' <span class="badge bg-warning ms-1" title="Compteur estimé">Est.</span>';
                                 }
@@ -592,10 +592,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 html += '-';
                             }
                             html += '</td>';
-                            html += '<td class="text-end"><strong class="text-info">' + (compteur.compteurs.pagesCouleur ? compteur.compteurs.pagesCouleur.toLocaleString('fr-FR') : '0') + '</strong></td>';
-                            html += '<td><small>' + compteur.compteurs.sourceDebut + ' → ' + compteur.compteurs.sourceFin;
+                            html += '<td class="text-end"><strong class="text-info">' + esc(compteur.compteurs.pagesCouleur != null ? compteur.compteurs.pagesCouleur.toLocaleString('fr-FR') : '0') + '</strong></td>';
+                            html += '<td><small>' + esc(compteur.compteurs.sourceDebut) + ' → ' + esc(compteur.compteurs.sourceFin);
                             if (compteur.compteurs.dateReleveFin) {
-                                html += '<br><small class="text-muted">' + compteur.compteurs.dateReleveFin + '</small>';
+                                html += '<br><small class="text-muted">' + esc(compteur.compteurs.dateReleveFin) + '</small>';
                             }
                             html += '</small></td>';
                             html += '<td>';
@@ -628,7 +628,15 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 spinner.style.display = 'none';
-                contentDiv.innerHTML = '<div class="alert alert-danger mb-0">Erreur: ' + error.message + '</div>';
+                var msg = (typeof window.escapeHtml === 'function') ? window.escapeHtml(error.message) : String(error.message).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+                contentDiv.innerHTML = '<div class="alert alert-danger mb-0 d-flex align-items-center flex-wrap gap-2">' +
+                    '<span class="flex-grow-1"><i class="bi bi-exclamation-triangle me-2"></i>Erreur: ' + msg + '</span>' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm periode-retry-btn" data-periode-id="' + periodeId + '" data-ligne-id="' + ligneId + '"><i class="bi bi-arrow-clockwise me-1"></i>Réessayer</button>' +
+                    '</div>';
+                contentDiv.querySelector('.periode-retry-btn').addEventListener('click', function() {
+                    var sel = document.querySelector('.periode-selector[data-ligne-id="' + this.getAttribute('data-ligne-id') + '"]');
+                    if (sel) { sel.value = this.getAttribute('data-periode-id'); sel.dispatchEvent(new Event('change')); }
+                });
                 console.error('Erreur AJAX:', error);
             });
         });

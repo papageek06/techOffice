@@ -96,7 +96,9 @@ final class PieceController extends AbstractController
     #[Route('/{id}/add-modele', name: 'app_piece_add_modele', methods: ['POST'])]
     public function addModele(Request $request, Piece $piece, EntityManagerInterface $entityManager): Response
     {
-        // Cette route accepte les requêtes AJAX pour ajouter une correspondance pièce/modèle
+        if (!$this->isCsrfTokenValid('piece_add_modele', (string) $request->request->get('_token'))) {
+            return $this->json(['error' => 'Token de sécurité invalide'], Response::HTTP_FORBIDDEN);
+        }
 
         $modeleId = $request->request->getInt('modele_id');
         $roleValue = $request->request->get('role');

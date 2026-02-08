@@ -15,4 +15,14 @@ class ImprimanteRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Imprimante::class);
     }
+
+    public function findOneByNumeroSerie(string $numeroSerie): ?Imprimante
+    {
+        return $this->findOneBy(['numeroSerie' => $numeroSerie], ['id' => 'DESC']);
+    }
+
+    public function findOneByAdresseIp(string $adresseIp): ?Imprimante
+    {
+        return $this->findOneBy(['adresseIp' => $adresseIp], ['id' => 'DESC']);
+    }
 }

@@ -7,6 +7,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.webhook_token_default: ''
 
 services:
     # default configuration for services in *this* file
@@ -52,3 +53,13 @@ services:
     App\Service\M365\M365ContactSyncService:
         arguments:
             $sharedFolderId: '%m365_shared_folder_id%'
+
+    # Webhook PrintAudit: token depuis env (vide = désactivé)
+    App\Controller\Api\InboundWebhookController:
+        arguments:
+            $webhookToken: '%env(default:app.webhook_token_default:PRINTAUDIT_WEBHOOK_TOKEN)%'
+
+    # Handler inbound: logger dédié canal inbound_alerts
+    App\MessageHandler\ProcessInboundEventHandler:
+        arguments:
+            $logger: '@monolog.logger.inbound_alerts'

@@ -81,13 +81,25 @@
         })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                if (clientErrorAlert) clientErrorAlert.remove();
                 tbody.innerHTML = data.tbody || '';
                 paginationContainer.innerHTML = data.pagination || '';
             })
             .catch(function() {
-                window.location.href = url.toString();
+                if (clientErrorAlert) clientErrorAlert.remove();
+                var cardBody = tbody.closest('.card-body');
+                clientErrorAlert = document.createElement('div');
+                clientErrorAlert.className = 'alert alert-danger d-flex align-items-center flex-wrap gap-2 mb-3';
+                clientErrorAlert.setAttribute('role', 'alert');
+                clientErrorAlert.innerHTML = '<span class="flex-grow-1"><i class="bi bi-exclamation-triangle me-2"></i>Erreur lors du chargement. Vérifiez votre connexion.</span>' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm client-retry-btn"><i class="bi bi-arrow-clockwise me-1"></i>Réessayer</button>';
+                cardBody.insertBefore(clientErrorAlert, cardBody.firstChild);
+                clientErrorAlert.querySelector('.client-retry-btn').addEventListener('click', function() {
+                    loadClients(getCurrentPage(), searchInput.value.trim());
+                });
             });
     }
+    var clientErrorAlert = null;
 
     searchInput.addEventListener('input', function() {
         clearTimeout(debounceTimer);
