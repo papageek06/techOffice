@@ -1,6 +1,6 @@
 # Déploiement TechOffice (production)
 
-Le projet utilise **MySQL/MariaDB uniquement**. SQLite n’est pas supporté en production ni pour les tests.
+Le projet utilise **MySQL/MariaDB uniquement**.
 
 ## 1. Prérequis
 
