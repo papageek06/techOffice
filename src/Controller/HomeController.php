@@ -30,55 +30,91 @@ final class HomeController extends AbstractController
         StockLocationRepository $stockLocationRepository
     ): Response {
         // Statistiques globales (utilisation de COUNT pour éviter de charger toutes les entités)
-        $countClients = $clientRepository->createQueryBuilder('c')
-            ->select('COUNT(c.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Gestion des erreurs de connexion avec try-catch
+        $countClients = 0;
+        try {
+            $countClients = (int) $clientRepository->createQueryBuilder('c')
+                ->select('COUNT(c.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
-        $countSites = $siteRepository->createQueryBuilder('s')
-            ->select('COUNT(s.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $countSites = 0;
+        try {
+            $countSites = (int) $siteRepository->createQueryBuilder('s')
+                ->select('COUNT(s.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
-        $countImprimantes = $imprimanteRepository->createQueryBuilder('i')
-            ->select('COUNT(i.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $countImprimantes = 0;
+        try {
+            $countImprimantes = (int) $imprimanteRepository->createQueryBuilder('i')
+                ->select('COUNT(i.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
-        $countImprimantesSuivies = $imprimanteRepository->createQueryBuilder('i')
-            ->select('COUNT(i.id)')
-            ->where('i.suivieParService = :suivie')
-            ->setParameter('suivie', true)
-            ->getQuery()
-            ->getSingleScalarResult();
+        $countImprimantesSuivies = 0;
+        try {
+            $countImprimantesSuivies = (int) $imprimanteRepository->createQueryBuilder('i')
+                ->select('COUNT(i.id)')
+                ->where('i.suivieParService = :suivie')
+                ->setParameter('suivie', true)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
-        $countInterventionsOuvertes = $interventionRepository->createQueryBuilder('i')
-            ->select('COUNT(i.id)')
-            ->where('i.statut = :statut')
-            ->setParameter('statut', StatutIntervention::OUVERTE)
-            ->getQuery()
-            ->getSingleScalarResult();
+        $countInterventionsOuvertes = 0;
+        try {
+            $countInterventionsOuvertes = (int) $interventionRepository->createQueryBuilder('i')
+                ->select('COUNT(i.id)')
+                ->where('i.statut = :statut')
+                ->setParameter('statut', StatutIntervention::OUVERTE)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
-        $countStocks = $stockLocationRepository->createQueryBuilder('sl')
-            ->select('COUNT(sl.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $countStocks = 0;
+        try {
+            $countStocks = (int) $stockLocationRepository->createQueryBuilder('sl')
+                ->select('COUNT(sl.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde 0
+        }
         
         $stats = [
-            'clients' => (int) ($countClients ?? 0),
-            'sites' => (int) ($countSites ?? 0),
-            'imprimantes' => (int) ($countImprimantes ?? 0),
-            'imprimantes_suivies' => (int) ($countImprimantesSuivies ?? 0),
-            'interventions_ouvertes' => (int) ($countInterventionsOuvertes ?? 0),
-            'stocks' => (int) ($countStocks ?? 0),
+            'clients' => $countClients,
+            'sites' => $countSites,
+            'imprimantes' => $countImprimantes,
+            'imprimantes_suivies' => $countImprimantesSuivies,
+            'interventions_ouvertes' => $countInterventionsOuvertes,
+            'stocks' => $countStocks,
         ];
 
         // Dernières interventions
-        $dernieresInterventions = $interventionRepository->createQueryBuilder('i')
-            ->orderBy('i.dateCreation', 'DESC')
-            ->setMaxResults(5)
-            ->getQuery()
-            ->getResult();
+        $dernieresInterventions = [];
+        try {
+            $dernieresInterventions = $interventionRepository->createQueryBuilder('i')
+                ->orderBy('i.dateCreation', 'DESC')
+                ->setMaxResults(5)
+                ->getQuery()
+                ->getResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde un tableau vide
+        }
 
         // Sites avec alertes (stocks bas)
         $sitesAvecAlertes = [];
@@ -94,16 +130,21 @@ final class HomeController extends AbstractController
                 ->getQuery()
                 ->getResult();
         } catch (\Exception $e) {
-            // Ignorer si les tables n'existent pas encore
+            // Ignorer si les tables n'existent pas encore ou en cas d'erreur de connexion
         }
 
         // Imprimantes nécessitant attention (niveau d'encre bas)
-        $imprimantesAttention = $imprimanteRepository->createQueryBuilder('i')
-            ->where('i.suivieParService = true')
-            ->andWhere('i.statut = :statut')
-            ->setParameter('statut', StatutImprimante::ACTIF)
-            ->getQuery()
-            ->getResult();
+        $imprimantesAttention = [];
+        try {
+            $imprimantesAttention = $imprimanteRepository->createQueryBuilder('i')
+                ->where('i.suivieParService = true')
+                ->andWhere('i.statut = :statut')
+                ->setParameter('statut', StatutImprimante::ACTIF)
+                ->getQuery()
+                ->getResult();
+        } catch (\Exception $e) {
+            // En cas d'erreur de connexion, on garde un tableau vide
+        }
 
         return $this->render('home/index.html.twig', [
             'stats' => $stats,
