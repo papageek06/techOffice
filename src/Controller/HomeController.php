@@ -29,14 +29,48 @@ final class HomeController extends AbstractController
         InterventionRepository $interventionRepository,
         StockLocationRepository $stockLocationRepository
     ): Response {
-        // Statistiques globales
+        // Statistiques globales (utilisation de COUNT pour éviter de charger toutes les entités)
+        $countClients = $clientRepository->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        $countSites = $siteRepository->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        $countImprimantes = $imprimanteRepository->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        $countImprimantesSuivies = $imprimanteRepository->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
+            ->where('i.suivieParService = :suivie')
+            ->setParameter('suivie', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        $countInterventionsOuvertes = $interventionRepository->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
+            ->where('i.statut = :statut')
+            ->setParameter('statut', StatutIntervention::OUVERTE)
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        $countStocks = $stockLocationRepository->createQueryBuilder('sl')
+            ->select('COUNT(sl.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        
         $stats = [
-            'clients' => count($clientRepository->findAll()),
-            'sites' => count($siteRepository->findAll()),
-            'imprimantes' => count($imprimanteRepository->findAll()),
-            'imprimantes_suivies' => count($imprimanteRepository->findBy(['suivieParService' => true])),
-            'interventions_ouvertes' => count($interventionRepository->findBy(['statut' => StatutIntervention::OUVERTE])),
-            'stocks' => count($stockLocationRepository->findAll()),
+            'clients' => (int) ($countClients ?? 0),
+            'sites' => (int) ($countSites ?? 0),
+            'imprimantes' => (int) ($countImprimantes ?? 0),
+            'imprimantes_suivies' => (int) ($countImprimantesSuivies ?? 0),
+            'interventions_ouvertes' => (int) ($countInterventionsOuvertes ?? 0),
+            'stocks' => (int) ($countStocks ?? 0),
         ];
 
         // Dernières interventions
