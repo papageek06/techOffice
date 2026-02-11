@@ -8,7 +8,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: InboundAttachmentRepository::class)]
 #[ORM\Table(name: 'inbound_attachment')]
-#[ORM\Index(columns: ['sha256'], name: 'idx_sha256', unique: true)]
 #[ORM\Index(columns: ['inbound_email_id'], name: 'idx_inbound_email_id')]
 class InboundAttachment
 {
