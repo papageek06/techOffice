@@ -73,7 +73,7 @@ services:
             $port: '%env(int:MAIL_IMAP_PORT)%'
             $user: '%env(MAIL_IMAP_USER)%'
             $password: '%env(MAIL_IMAP_PASSWORD)%'
-            $mailbox: '%env(default:MAIL_IMAP_MAILBOX:mail_imap_mailbox_default)%'
+            $mailbox: '%env(default:mail_imap_mailbox_default:MAIL_IMAP_MAILBOX)%'
             $ssl: true
             $logger: '@logger'
 

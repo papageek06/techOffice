@@ -40,7 +40,7 @@ sudo phpenmod imap
 sudo yum install php-imap
 
 # macOS (Homebrew):
-brew install php-imap
+
 ```
 
 ### 3. Migration de la base de données
