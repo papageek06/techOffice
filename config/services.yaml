@@ -9,7 +9,7 @@
 parameters:
     app.webhook_token_default: ''
     app.mail_attachments_dir: '%kernel.project_dir%/var/mail_attachments'
-    app.mail_imap_mailbox_default: 'INBOX'
+    mail_imap_mailbox_default: 'INBOX'
 
 services:
     # default configuration for services in *this* file
@@ -73,7 +73,7 @@ services:
             $port: '%env(int:MAIL_IMAP_PORT)%'
             $user: '%env(MAIL_IMAP_USER)%'
             $password: '%env(MAIL_IMAP_PASSWORD)%'
-            $mailbox: '%env(default:MAIL_IMAP_MAILBOX:app.mail_imap_mailbox_default)%'
+            $mailbox: '%env(default:MAIL_IMAP_MAILBOX:mail_imap_mailbox_default)%'
             $ssl: true
             $logger: '@logger'
 
