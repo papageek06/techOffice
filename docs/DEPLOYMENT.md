@@ -11,20 +11,7 @@ Le projet utilise **MySQL/MariaDB uniquement**.
 
 ## 2. Variables d’environnement (production)
 
-À définir sur le serveur ou dans `.env.local` (non versionné) :
 
-| Variable | Obligatoire | Description |
-|----------|-------------|-------------|
-| `APP_ENV` | Oui | `prod` |
-| `APP_DEBUG` | Oui | `0` (désactivé en prod) |
-| `APP_SECRET` | Oui | Clé secrète (ex. générée avec `openssl rand -hex 32`) |
-| `DATABASE_URL` | Oui | `mysql://user:password@host:3306/techoffice?serverVersion=8.0.32&charset=utf8mb4` (adapter `serverVersion` si MariaDB) |
-| `PRINTAUDIT_WEBHOOK_TOKEN` | Si webhooks | Token pour `POST /api/inbound/printaudit/webhook` |
-| `MESSENGER_TRANSPORT_DSN` | Oui | Ex. `doctrine://default?auto_setup=0` ou Redis/AMQP pour async |
-| `MAILER_DSN` | Selon besoin | DSN du mailer (prod) |
-| `DEFAULT_URI` | Recommandé | URL publique du site (ex. `https://techoffice.example.com`) |
-| `SUPER_ADMIN_EMAIL` | Optionnel | Email du super admin (pour `app:user:create-admin` sans arguments) |
-| `SUPER_ADMIN_PASSWORD` | Optionnel | Mot de passe du super admin (pour `app:user:create-admin` sans arguments) |
 
 **Exemple `.env.local` (à ne pas committer) :**
 
