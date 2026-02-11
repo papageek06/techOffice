@@ -63,3 +63,26 @@ services:
     App\MessageHandler\ProcessInboundEventHandler:
         arguments:
             $logger: '@monolog.logger.inbound_alerts'
+
+    # Service IMAP Mailbox Client
+    App\Service\ImapMailboxClient:
+        arguments:
+            $host: '%env(MAIL_IMAP_HOST)%'
+            $port: '%env(int:MAIL_IMAP_PORT)%'
+            $user: '%env(MAIL_IMAP_USER)%'
+            $password: '%env(MAIL_IMAP_PASSWORD)%'
+            $mailbox: '%env(default:MAIL_IMAP_MAILBOX:INBOX)%'
+            $ssl: true
+            $logger: '@logger'
+
+    # Service Inbound Mail Importer
+    App\Service\InboundMailImporter:
+        arguments:
+            $imapClient: '@App\Service\ImapMailboxClient'
+            $attachmentsDir: '%env(default:MAIL_ATTACHMENTS_DIR:kernel.project_dir%/var/mail_attachments)%'
+            $logger: '@logger'
+
+    # Commande Import Mail
+    App\Command\ImportMailCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'

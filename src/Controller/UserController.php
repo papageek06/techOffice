@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/user')]
 final class UserController extends AbstractController
@@ -48,9 +49,50 @@ final class UserController extends AbstractController
         ]);
     }
 
+    /**
+     * Route pour que les utilisateurs ROLE_USER voient leur propre profil
+     */
+    #[Route('/show', name: 'app_user_show_self', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function showSelf(): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour voir votre profil.');
+        }
+
+        return $this->render('user/show.html.twig', [
+            'user' => $user,
+        ]);
+    }
+
+    /**
+     * Route pour voir un utilisateur par ID
+     * - Les utilisateurs avec uniquement ROLE_USER ne peuvent voir que leur propre profil
+     * - Les autres rôles (ROLE_ADMIN, ROLE_COMPTABLE, etc.) peuvent voir tous les profils
+     */
     #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
     public function show(User $user): Response
     {
+        $currentUser = $this->getUser();
+        
+        if (!$currentUser) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour voir un profil.');
+        }
+
+        // Vérifier si l'utilisateur a un rôle supérieur à ROLE_USER
+        $hasAdminRole = $this->isGranted('ROLE_ADMIN');
+        $hasComptableRole = $this->isGranted('ROLE_COMPTABLE');
+        
+        // Si l'utilisateur n'a pas de rôle supérieur (uniquement ROLE_USER), 
+        // il ne peut voir que son propre profil
+        if (!$hasAdminRole && !$hasComptableRole) {
+            // Vérifier que l'utilisateur essaie de voir son propre profil
+            if ($currentUser->getId() !== $user->getId()) {
+                throw $this->createAccessDeniedException('Vous n\'avez pas accès à ce profil. Vous pouvez uniquement voir votre propre profil via /user/show');
+            }
+        }
+
         return $this->render('user/show.html.twig', [
             'user' => $user,
         ]);

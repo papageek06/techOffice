@@ -51,18 +51,34 @@ class CreateAdminUserCommand extends Command
         $plainPassword = trim((string) $input->getArgument('password'));
 
         // En prod : utiliser les variables d'environnement si les arguments ne sont pas fournis
-        if ($login === '' && ($envEmail = $_ENV['SUPER_ADMIN_EMAIL'] ?? null) && $envEmail !== '') {
-            $login = $envEmail;
+        // Essayer plusieurs méthodes pour lire les variables d'environnement
+        if ($login === '') {
+            $envEmail = getenv('SUPER_ADMIN_EMAIL') 
+                ?: ($_ENV['SUPER_ADMIN_EMAIL'] ?? null)
+                ?: ($_SERVER['SUPER_ADMIN_EMAIL'] ?? null);
+            
+            if ($envEmail && $envEmail !== '') {
+                $login = $envEmail;
+            }
         }
         if ($login === '') {
             $io->error('Indiquez le login (email) en argument ou définissez SUPER_ADMIN_EMAIL dans .env.local');
+            $io->note('Vérifiez que SUPER_ADMIN_EMAIL est bien défini dans votre fichier .env.local');
             return Command::FAILURE;
         }
-        if ($plainPassword === '' && ($envPass = $_ENV['SUPER_ADMIN_PASSWORD'] ?? null) && $envPass !== '') {
-            $plainPassword = $envPass;
+        
+        if ($plainPassword === '') {
+            $envPass = getenv('SUPER_ADMIN_PASSWORD') 
+                ?: ($_ENV['SUPER_ADMIN_PASSWORD'] ?? null)
+                ?: ($_SERVER['SUPER_ADMIN_PASSWORD'] ?? null);
+            
+            if ($envPass && $envPass !== '') {
+                $plainPassword = $envPass;
+            }
         }
         if ($plainPassword === '') {
             $io->error('Indiquez le mot de passe en argument ou définissez SUPER_ADMIN_PASSWORD dans .env.local');
+            $io->note('Vérifiez que SUPER_ADMIN_PASSWORD est bien défini dans votre fichier .env.local');
             return Command::FAILURE;
         }
 

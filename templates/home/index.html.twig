@@ -4,6 +4,25 @@
 
 {% block body %}
 <div class="container-fluid px-3 px-md-4">
+    {# Message si l'utilisateur n'est pas connecté #}
+    {% if not is_authenticated %}
+        <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="card border-0 shadow-lg text-center">
+                    <div class="card-body p-5">
+                        <div class="mb-4">
+                            <i class="bi bi-lock-fill text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h2 class="mb-3">Accès restreint</h2>
+                        <p class="text-muted mb-4">Veuillez vous connecter pour accéder au dashboard.</p>
+                        <a href="{{ path('app_login') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
     {# En-tête du dashboard #}
     <div class="row mb-4">
         <div class="col-12">
@@ -257,48 +276,49 @@
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animation des cartes statistiques
+        const statsCards = document.querySelectorAll('.stats-card');
+        statsCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+
+        // Effet hover sur les cartes
+        statsCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
+            });
+        });
+    });
+    </script>
+
+    <style>
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    </style>
+    {% endif %}
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Animation des cartes statistiques
-    const statsCards = document.querySelectorAll('.stats-card');
-    statsCards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            card.style.transition = 'all 0.5s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
-    });
-
-    // Effet hover sur les cartes
-    statsCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
-        });
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '';
-        });
-    });
-});
-</script>
-
-<style>
-.stats-card {
-    transition: all 0.3s ease;
-}
-
-.stats-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-.card-header {
-    border-bottom: 1px solid rgba(0,0,0,.125);
-}
-</style>
 {% endblock %}

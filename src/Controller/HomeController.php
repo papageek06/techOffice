@@ -29,6 +29,20 @@ final class HomeController extends AbstractController
         InterventionRepository $interventionRepository,
         StockLocationRepository $stockLocationRepository
     ): Response {
+        // Vérifier si l'utilisateur est connecté
+        $user = $this->getUser();
+        
+        // Si l'utilisateur n'est pas connecté, on ne charge pas les données
+        if (!$user) {
+            return $this->render('home/index.html.twig', [
+                'is_authenticated' => false,
+                'stats' => [],
+                'dernieresInterventions' => [],
+                'sitesAvecAlertes' => [],
+                'imprimantesAttention' => [],
+            ]);
+        }
+        
         // Statistiques globales (utilisation de COUNT pour éviter de charger toutes les entités)
         // Gestion des erreurs de connexion avec try-catch
         $countClients = 0;
@@ -147,6 +161,7 @@ final class HomeController extends AbstractController
         }
 
         return $this->render('home/index.html.twig', [
+            'is_authenticated' => true,
             'stats' => $stats,
             'dernieresInterventions' => $dernieresInterventions,
             'sitesAvecAlertes' => $sitesAvecAlertes,
