@@ -40,6 +40,16 @@ final class InboundFileStorageService
         $originalName = $file->getClientOriginalName();
         $ext = strtolower($file->getClientOriginalExtension() ?: '');
 
+        // Fichier sans nom ou extension non autorisée (ex. mail-fetcher envoie attachment.bin) → traiter comme .txt
+        if ($originalName === '' || !\in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            $originalName = $originalName !== '' ? $originalName : 'attachment';
+            $ext = 'txt';
+            $this->logger?->info('Inbound file: nom normalisé pour stockage', [
+                'originalName' => $file->getClientOriginalName(),
+                'storedAs' => $originalName . '.' . $ext,
+            ]);
+        }
+
         if (\in_array($ext, self::FORBIDDEN_EXTENSIONS, true)) {
             $this->logger?->warning('Inbound file rejected: forbidden extension', [
                 'extension' => $ext,
