@@ -136,15 +136,16 @@ curl -X POST "https://votredomaine.com/api/inbound/mail/alert" \
    php bin/console cache:clear --env=prod
    ```
 
-4. **Migrations**  
-   Exécuter les migrations pour créer les tables `inbound_alert` et `inbound_alert_attachment` :
+4. **Tables inbound (entités Doctrine)**  
+   En priorité : migrations
    ```bash
    php bin/console doctrine:migrations:migrate --no-interaction
    ```
-   Si la migration échoue en post-check (doublon dans `doctrine_migration_versions`), créer les tables à la main :
+   Si la migration a échoué en post-check (doublon dans `doctrine_migration_versions`), créer les tables **à partir des entités** (source de vérité = `InboundAlert`, `InboundAlertAttachment`) :
    ```bash
    php bin/console app:inbound:ensure-tables
    ```
+   Cette commande utilise le SchemaTool Doctrine : le schéma est généré depuis les entités, pas du SQL en dur.
 
 5. **Messenger**  
    Si le transport est `doctrine` (file d’attente en BDD), lancer le worker en cron ou en tâche planifiée :
