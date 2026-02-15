@@ -51,7 +51,7 @@ final class ProcessInboundAlertHandler
             $csvAttachments = $attachments->filter(fn (InboundAlertAttachment $a) => $this->isCsvAttachment($a));
 
             if ($csvAttachments->count() > 0) {
-                // Rapport CSV : stocké dans var/inbound, import envoyé au flux, enregistrer la route pour consultation
+                // Rapport CSV : mail avec pièce(s) jointe(s) CSV → import + enregistrer la route pour consultation
                 foreach ($csvAttachments as $attachment) {
                     $fullPath = $this->projectDir . '/var/inbound/' . $attachment->getStoredPath();
                     if (is_file($fullPath) && is_readable($fullPath)) {
@@ -70,7 +70,7 @@ final class ProcessInboundAlertHandler
                     }
                 }
             } elseif ($attachments->count() === 0) {
-                // Smart Alert sans PJ : parser le body, créer DefautImprimante, déduire toner si changement cartouche
+                // Smart Alert : pas de pièce jointe → traiter le body (site, imprimante, type défaut, déduction toner)
                 $body = $alert->getBody() ?? '';
                 if ($body !== '') {
                     $parsed = $this->smartAlertParser->parse($body, $alert->getReceivedAt());
@@ -102,19 +102,17 @@ final class ProcessInboundAlertHandler
 
                         $this->em->persist($defaut);
                     }
-                    $this->logger->info('Inbound alerte parsée et défauts enregistrés', [
-                        'alertId' => $alert->getId(),
-                        'subject' => $alert->getSubject(),
-                        'defautsCount' => count($parsed),
-                    ]);
-                } else {
-                    $this->logger->info('Inbound alerte sans pièce jointe (body vide)', [
-                        'alertId' => $alert->getId(),
-                        'subject' => $alert->getSubject(),
-                    ]);
+                    if (\count($parsed) > 0) {
+                        $this->logger->info('Inbound alerte parsée et défauts enregistrés', [
+                            'alertId' => $alert->getId(),
+                            'subject' => $alert->getSubject(),
+                            'defautsCount' => count($parsed),
+                        ]);
+                    }
                 }
             } else {
-                $this->logger->info('Inbound alerte avec pièces jointes non-CSV', [
+                // Pièce(s) jointe(s) mais pas CSV → rapport non géré, pas de parsing body
+                $this->logger->info('Inbound alerte avec pièces jointes non-CSV (ignoré pour défauts)', [
                     'alertId' => $alert->getId(),
                     'subject' => $alert->getSubject(),
                     'attachmentsCount' => $attachments->count(),
