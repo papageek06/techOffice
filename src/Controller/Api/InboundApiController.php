@@ -203,8 +203,25 @@ final class InboundApiController extends AbstractController
             $payloadRaw = $request->request->get('payload');
             if (\is_string($payloadRaw)) {
                 $decoded = json_decode($payloadRaw, true);
-                return \is_array($decoded) ? $decoded : null;
+                if (\is_array($decoded)) {
+                    return $decoded;
+                }
             }
+            // Fallback : payload envoyé comme fichier (ex. form-data avec Buffer)
+            $payloadFile = $request->files->get('payload');
+            if ($payloadFile instanceof \Symfony\Component\HttpFoundation\File\UploadedFile && $payloadFile->isValid()) {
+                $payloadRaw = file_get_contents($payloadFile->getPathname());
+                if ($payloadRaw !== false) {
+                    $decoded = json_decode($payloadRaw, true);
+                    if (\is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            }
+            $this->logger->warning('Inbound API alert: multipart sans payload valide', [
+                'requestKeys' => array_keys($request->request->all()),
+                'filesKeys' => array_keys($request->files->all()),
+            ]);
         }
         return null;
     }
