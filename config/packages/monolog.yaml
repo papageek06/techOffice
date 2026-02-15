@@ -2,6 +2,7 @@ monolog:
     channels:
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
         - inbound_alerts # Webhooks / alertes entrantes (PrintAudit, etc.)
+        - inbound # API inbound (report CSV, alertes mail, token, pièces jointes)
 
 when@dev:
     monolog:

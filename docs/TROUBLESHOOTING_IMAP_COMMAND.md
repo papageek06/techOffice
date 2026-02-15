@@ -62,3 +62,33 @@ tail -f var/log/prod.log
    ```bash
    composer install --no-dev --optimize-autoloader
    ```
+
+---
+
+## Erreur « Connection refused » vers ssl0.ovh.net:993 (OVH)
+
+### Symptôme
+
+```
+Échec de connexion IMAP: Can't connect to ssl0.ovh.net,993: Connection refused
+```
+
+La commande tourne bien, mais la connexion TCP vers le serveur IMAP est refusée.
+
+### Cause
+
+Sur l’hébergement mutualisé OVH, les **connexions sortantes** (depuis le serveur web vers l’extérieur) peuvent être **restreintes ou bloquées** par le pare-feu. Le port 993 (IMAPS) vers `ssl0.ovh.net` n’est alors pas accessible depuis le cluster web.
+
+### Pistes de solution
+
+1. **Contacter OVH**  
+   Demander si les connexions sortantes vers le port **993 (IMAP)** sont autorisées depuis votre hébergement, et s’il existe un **serveur IMAP « interne »** à utiliser quand l’application tourne chez OVH (ex. hostname différent, ou règle firewall à faire ouvrir).
+
+2. **Tester depuis une autre machine**  
+   Lancer la même commande en local (ou sur un VPS/serveur où le port 993 sortant est autorisé) avec les mêmes variables d’env pour vérifier que la config IMAP est correcte.
+
+3. **Exécuter l’import ailleurs**  
+   Si OVH ne peut pas ouvrir l’accès sortant IMAP depuis l’hébergement web, faire tourner `app:mail:import` sur une machine qui a accès à Internet (cron local, autre serveur, script planifié), puis synchroniser les pièces jointes / données si besoin.
+
+4. **Vérifier le serveur IMAP**  
+   S’assurer que la boîte `alert@professionaldev.fr` est bien sur les serveurs OVH (ssl0.ovh.net) et que le compte est activé. Tester la connexion avec un client mail (Thunderbird, etc.) depuis ton PC pour confirmer que host/port/identifiants sont bons.
