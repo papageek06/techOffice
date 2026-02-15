@@ -141,6 +141,10 @@ curl -X POST "https://votredomaine.com/api/inbound/mail/alert" \
    ```bash
    php bin/console doctrine:migrations:migrate --no-interaction
    ```
+   Si la migration échoue en post-check (doublon dans `doctrine_migration_versions`), créer les tables à la main :
+   ```bash
+   php bin/console app:inbound:ensure-tables
+   ```
 
 5. **Messenger**  
    Si le transport est `doctrine` (file d’attente en BDD), lancer le worker en cron ou en tâche planifiée :
