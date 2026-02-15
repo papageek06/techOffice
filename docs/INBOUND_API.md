@@ -105,10 +105,24 @@ curl -X POST "https://votredomaine.com/api/inbound/mail/alert" \
 - **Taille max** : variable d’environnement `INBOUND_MAX_FILE_SIZE` (ex. `10M`).
 - **Déduplication** : hash SHA256 en base ; doublons possibles selon contrainte unique.
 
+## Routage mail (mail-fetcher → techOffice)
+
+D’après la boîte **alert@professionaldev.fr** (Katun / PrintAudit) :
+
+| Type d’email | Exemple | Traitement |
+|--------------|--------|------------|
+| **Avec pièce jointe CSV** | Sujet « CSV BACKUP », rapport en PJ | → **Rapport CSV** : import via `ImportCsvService` (relevés d’imprimantes). |
+| **Sans pièce jointe** | Sujet « alert », Smart Alert (toner, etc.) | → **Alerte** : enregistrée dans `inbound_alert`, traitée comme alerte (log, statut PROCESSED). |
+| **Avec PJ non-CSV** | PDF, image, etc. | Enregistrée, pas d’import rapport ; statut PROCESSED. |
+
 ## Traitement asynchrone
 
 - Chaque alerte enregistrée déclenche un message **ProcessInboundAlertMessage** (Messenger).
-- **Handler** : si une pièce jointe est un CSV, il appelle `ImportCsvService` sur ce fichier ; sinon l’alerte est simplement marquée comme traitée. En cas d’erreur : statut `ERROR` et `errorMessage` renseignés.
+- **ProcessInboundAlertHandler** :
+  - Si au moins une pièce jointe est un **CSV** → import rapport (rapport CSV).
+  - Si **aucune pièce jointe** → alerte traitée (Smart Alert, etc.).
+  - Si pièces jointes mais **aucun CSV** → enregistrée, marquée PROCESSED.
+- En cas d’erreur : statut `ERROR` et `error_message` renseignés.
 
 ## Logging
 

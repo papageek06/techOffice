@@ -116,9 +116,10 @@ final class InboundApiController extends AbstractController
         }
 
         $attachmentsSaved = 0;
-        $attachments = $request->files->all('attachments');
+        // mail-fetcher envoie attachments[] en multipart ; PHP peut les exposer sous "attachments" ou "attachments[]"
+        $attachments = $request->files->all('attachments') ?: $request->files->all('attachments[]') ?: [];
         if (!\is_array($attachments)) {
-            $attachments = $request->files->get('attachments');
+            $attachments = $request->files->get('attachments') ?? $request->files->get('attachments[]');
             $attachments = $attachments ? (array) $attachments : [];
         }
         foreach ($attachments as $uploadedFile) {

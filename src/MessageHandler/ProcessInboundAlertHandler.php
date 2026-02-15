@@ -38,22 +38,40 @@ final class ProcessInboundAlertHandler
         }
 
         try {
-            $hasCsv = false;
-            foreach ($alert->getAttachments() as $attachment) {
-                if ($this->isCsvAttachment($attachment)) {
+            $attachments = $alert->getAttachments();
+            $csvAttachments = $attachments->filter(fn (InboundAlertAttachment $a) => $this->isCsvAttachment($a));
+
+            if ($csvAttachments->count() > 0) {
+                // Email avec pièce(s) jointe(s) CSV → rapport CSV (import)
+                foreach ($csvAttachments as $attachment) {
                     $fullPath = $this->projectDir . '/var/inbound/' . $attachment->getStoredPath();
                     if (is_file($fullPath) && is_readable($fullPath)) {
                         $result = $this->importCsvService->import($fullPath);
-                        $this->logger->info('Inbound alert CSV import done', [
+                        $this->logger->info('Inbound rapport CSV importé', [
                             'alertId' => $alert->getId(),
                             'attachmentId' => $attachment->getId(),
+                            'subject' => $alert->getSubject(),
                             'success' => $result['success'],
                             'errors' => $result['errors'],
-                            'skipped' => $result['skipped'],
+                            'skipped' => $result['skipped'] ?? 0,
                         ]);
-                        $hasCsv = true;
                     }
                 }
+            } elseif ($attachments->count() === 0) {
+                // Email sans pièce jointe → alerte (Smart Alert Katun/PrintAudit, etc.) : traitée comme alerte
+                $this->logger->info('Inbound alerte traitée (sans pièce jointe)', [
+                    'alertId' => $alert->getId(),
+                    'subject' => $alert->getSubject(),
+                    'from' => $alert->getFromEmail(),
+                    'receivedAt' => $alert->getReceivedAt()?->format(\DateTimeInterface::ATOM),
+                ]);
+            } else {
+                // Pièces jointes mais pas de CSV → enregistré, pas d'import rapport
+                $this->logger->info('Inbound alerte avec pièces jointes non-CSV', [
+                    'alertId' => $alert->getId(),
+                    'subject' => $alert->getSubject(),
+                    'attachmentsCount' => $attachments->count(),
+                ]);
             }
 
             $alert->setStatus(InboundAlert::STATUS_PROCESSED);
