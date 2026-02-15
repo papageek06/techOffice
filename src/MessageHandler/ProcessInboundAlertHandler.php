@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\MessageHandler;
 
+use App\Entity\DefautImprimante;
 use App\Entity\InboundAlert;
 use App\Entity\InboundAlertAttachment;
+use App\Entity\RapportCsv;
+use App\Enum\TypeDefautAlert;
 use App\Message\ProcessInboundAlertMessage;
 use App\Repository\InboundAlertRepository;
+use App\Repository\ImprimanteRepository;
+use App\Service\DeductTonerForAlertService;
 use App\Service\ImportCsvService;
+use App\Service\Inbound\SmartAlertBodyParser;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -18,8 +24,11 @@ final class ProcessInboundAlertHandler
 {
     public function __construct(
         private readonly InboundAlertRepository $alertRepository,
+        private readonly ImprimanteRepository $imprimanteRepository,
         private readonly EntityManagerInterface $em,
         private readonly ImportCsvService $importCsvService,
+        private readonly SmartAlertBodyParser $smartAlertParser,
+        private readonly DeductTonerForAlertService $deductTonerService,
         private readonly string $projectDir,
         private readonly LoggerInterface $logger,
     ) {
@@ -42,15 +51,18 @@ final class ProcessInboundAlertHandler
             $csvAttachments = $attachments->filter(fn (InboundAlertAttachment $a) => $this->isCsvAttachment($a));
 
             if ($csvAttachments->count() > 0) {
-                // Email avec pièce(s) jointe(s) CSV → rapport CSV (import)
+                // Rapport CSV : stocké dans var/inbound, import envoyé au flux, enregistrer la route pour consultation
                 foreach ($csvAttachments as $attachment) {
                     $fullPath = $this->projectDir . '/var/inbound/' . $attachment->getStoredPath();
                     if (is_file($fullPath) && is_readable($fullPath)) {
                         $result = $this->importCsvService->import($fullPath);
-                        $this->logger->info('Inbound rapport CSV importé', [
+                        $rapport = new RapportCsv();
+                        $rapport->setStoredPath($attachment->getStoredPath());
+                        $rapport->setInboundAlert($alert);
+                        $this->em->persist($rapport);
+                        $this->logger->info('Inbound rapport CSV importé et enregistré', [
                             'alertId' => $alert->getId(),
-                            'attachmentId' => $attachment->getId(),
-                            'subject' => $alert->getSubject(),
+                            'storedPath' => $attachment->getStoredPath(),
                             'success' => $result['success'],
                             'errors' => $result['errors'],
                             'skipped' => $result['skipped'] ?? 0,
@@ -58,15 +70,50 @@ final class ProcessInboundAlertHandler
                     }
                 }
             } elseif ($attachments->count() === 0) {
-                // Email sans pièce jointe → alerte (Smart Alert Katun/PrintAudit, etc.) : traitée comme alerte
-                $this->logger->info('Inbound alerte traitée (sans pièce jointe)', [
-                    'alertId' => $alert->getId(),
-                    'subject' => $alert->getSubject(),
-                    'from' => $alert->getFromEmail(),
-                    'receivedAt' => $alert->getReceivedAt()?->format(\DateTimeInterface::ATOM),
-                ]);
+                // Smart Alert sans PJ : parser le body, créer DefautImprimante, déduire toner si changement cartouche
+                $body = $alert->getBody() ?? '';
+                if ($body !== '') {
+                    $parsed = $this->smartAlertParser->parse($body, $alert->getReceivedAt());
+                    foreach ($parsed as $item) {
+                        $defaut = new DefautImprimante();
+                        $defaut->setSiteNom($item['siteNom']);
+                        $defaut->setTypeDefaut($item['typeDefaut']);
+                        $defaut->setMessage($item['message']);
+                        $defaut->setCouleurToner($item['couleurToner']);
+                        $defaut->setMachineSerial($item['serial']);
+                        $defaut->setMachineIp($item['ip']);
+                        $defaut->setMachineNom($item['machineNom']);
+                        $defaut->setInboundAlert($alert);
+                        $defaut->setReceivedAt($alert->getReceivedAt());
+
+                        $imprimante = null;
+                        if (!empty($item['serial'])) {
+                            $imprimante = $this->imprimanteRepository->findOneByNumeroSerie($item['serial']);
+                        }
+                        if ($imprimante === null && !empty($item['ip'])) {
+                            $imprimante = $this->imprimanteRepository->findOneByAdresseIp($item['ip']);
+                        }
+                        if ($imprimante !== null) {
+                            $defaut->setImprimante($imprimante);
+                            if ($item['typeDefaut'] === TypeDefautAlert::CHANGEMENT_CARTOUCHE && $item['couleurToner'] !== null) {
+                                $this->deductTonerService->deductOneTonerForImprimante($imprimante, $item['couleurToner']);
+                            }
+                        }
+
+                        $this->em->persist($defaut);
+                    }
+                    $this->logger->info('Inbound alerte parsée et défauts enregistrés', [
+                        'alertId' => $alert->getId(),
+                        'subject' => $alert->getSubject(),
+                        'defautsCount' => count($parsed),
+                    ]);
+                } else {
+                    $this->logger->info('Inbound alerte sans pièce jointe (body vide)', [
+                        'alertId' => $alert->getId(),
+                        'subject' => $alert->getSubject(),
+                    ]);
+                }
             } else {
-                // Pièces jointes mais pas de CSV → enregistré, pas d'import rapport
                 $this->logger->info('Inbound alerte avec pièces jointes non-CSV', [
                     'alertId' => $alert->getId(),
                     'subject' => $alert->getSubject(),
