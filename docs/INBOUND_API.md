@@ -49,14 +49,14 @@ Deux modes acceptés.
 ### Mode JSON (alerte sans pièce jointe)
 
 - **Content-Type** : `application/json`
-- **Corps** :
+- **Corps** (aligné sur **mail-fetcher fetch.js**) :
   - `messageId` (string, optionnel)
   - `subject` (string)
   - `from` ou `fromEmail` (string)
   - `receivedAt` (string ISO 8601, optionnel)
-  - `body` (string, texte brut)
-  - `severity` (string, optionnel : `info`, `warning`, `critical`, défaut `info`)
-  - `tags` (array, optionnel)
+  - `body` (string) : texte brut ou HTML converti en texte via `buildBody(parsed)` (html-to-text pour Smart Alerts)
+  - `severity` (string) : `info`, `warning`, `critical` — détecté par `detectSeverity(subject, body)` dans fetch.js
+  - `tags` (array, optionnel) : ex. `["email", "ovh"]`, stocké en JSON en base
 
 **Réponse** : `{"ok": true, "alertId": 123, "attachmentsSaved": 0}`
 

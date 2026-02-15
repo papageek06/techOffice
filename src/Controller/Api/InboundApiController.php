@@ -101,12 +101,17 @@ final class InboundApiController extends AbstractController
             return $this->json(['ok' => false, 'error' => 'Invalid payload: expected JSON body or multipart with payload field'], Response::HTTP_BAD_REQUEST);
         }
 
+        // Structure alignée sur fetch.js : messageId, subject, from, receivedAt, severity, body (buildBody), tags
         $alert = new InboundAlert();
         $alert->setMessageId($payload['messageId'] ?? null);
         $alert->setSubject($payload['subject'] ?? null);
         $alert->setFromEmail($payload['from'] ?? $payload['fromEmail'] ?? null);
-        $alert->setBody($payload['body'] ?? null);
+        $body = isset($payload['body']) && $payload['body'] !== '' ? trim((string) $payload['body']) : null;
+        $alert->setBody($body !== '' ? $body : null);
         $alert->setSeverity($payload['severity'] ?? 'info');
+        if (isset($payload['tags']) && \is_array($payload['tags'])) {
+            $alert->setTags($payload['tags']);
+        }
         if (!empty($payload['receivedAt'])) {
             try {
                 $alert->setReceivedAt(new \DateTimeImmutable($payload['receivedAt']));

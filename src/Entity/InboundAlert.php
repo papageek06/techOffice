@@ -41,7 +41,8 @@ class InboundAlert
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $severity = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    /** Corps du mail : texte brut ou HTML converti en texte (buildBody dans fetch.js) — LONGTEXT pour Smart Alerts */
+    #[ORM\Column(type: Types::TEXT, nullable: true, columnDefinition: 'LONGTEXT DEFAULT NULL')]
     private ?string $body = null;
 
     #[ORM\Column(length: 30)]
@@ -55,6 +56,10 @@ class InboundAlert
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, name: 'processed_at')]
     private ?\DateTimeImmutable $processedAt = null;
+
+    /** Tags optionnels envoyés par fetch.js (ex. ['email', 'ovh']) */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $tags = null;
 
     /** @var Collection<int, InboundAlertAttachment> */
     #[ORM\OneToMany(targetEntity: InboundAlertAttachment::class, mappedBy: 'inboundAlert', cascade: ['persist', 'remove'])]
@@ -193,6 +198,17 @@ class InboundAlert
             $this->attachments->add($attachment);
             $attachment->setInboundAlert($this);
         }
+        return $this;
+    }
+
+    public function getTags(): ?array
+    {
+        return $this->tags;
+    }
+
+    public function setTags(?array $tags): static
+    {
+        $this->tags = $tags;
         return $this;
     }
 }
