@@ -121,12 +121,9 @@ final class InboundApiController extends AbstractController
         }
 
         $attachmentsSaved = 0;
-        // mail-fetcher envoie attachments[] en multipart ; PHP peut les exposer sous "attachments" ou "attachments[]"
-        $attachments = $request->files->all('attachments') ?: $request->files->all('attachments[]') ?: [];
-        if (!\is_array($attachments)) {
-            $attachments = $request->files->get('attachments') ?? $request->files->get('attachments[]');
-            $attachments = $attachments ? (array) $attachments : [];
-        }
+        // Ne pas utiliser all('attachments') : avec 1 seul fichier PHP met un UploadedFile, pas un array → BadRequestException
+        $attachments = $request->files->get('attachments') ?? $request->files->get('attachments[]');
+        $attachments = \is_array($attachments) ? $attachments : ($attachments ? [$attachments] : []);
         foreach ($attachments as $uploadedFile) {
             if (!$uploadedFile instanceof \Symfony\Component\HttpFoundation\File\UploadedFile || !$uploadedFile->isValid()) {
                 continue;
