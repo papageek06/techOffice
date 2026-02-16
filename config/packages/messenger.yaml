@@ -13,7 +13,7 @@ framework:
                     max_retries: 3
                     multiplier: 2
             failed: 'doctrine://default?queue_name=failed'
-            # sync: 'sync://'
+            sync: 'sync://'
 
         default_bus: messenger.bus.default
 
@@ -25,4 +25,5 @@ framework:
             Symfony\Component\Notifier\Message\ChatMessage: async
             Symfony\Component\Notifier\Message\SmsMessage: async
             App\Message\ProcessInboundEventMessage: async
-            App\Message\ProcessInboundAlertMessage: async
+            # Traitement immédiat dans la requête : défauts, rapport CSV, pièces jointes
+            App\Message\ProcessInboundAlertMessage: sync
